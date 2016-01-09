@@ -1,4 +1,5 @@
-package AndrewIsTheBest;
+package team302;
+
 
 import java.util.Random;
 
@@ -21,23 +22,26 @@ public class RobotPlayer {
         int robotCount=0;
         int buildingBreak = 0;
         int buildingBreakConstant = 100;
-        
+        int broadcastCount = 5;
+        int broadcastCountConstant = 100;
         MapLocation archStart = new MapLocation(0,0);
         MapLocation archEnd = new MapLocation(0,0);
-        
+        MapLocation closestArchon = new MapLocation(10000,10000);
+        int closestArchonDistance = rc.getLocation().distanceSquaredTo(closestArchon);
         int radius = 5;
         if (rc.getType() == RobotType.ARCHON) {
             try {
                 // Any code here gets executed exactly once at the beginning of the game.
             	int archonCount = rc.getRobotCount();
             	if(archonCount>6){
-            		buildingBreakConstant = 200;
+            		buildingBreakConstant = 160;
             	}
             	archStart = rc.getLocation();
             	
             	archEnd = randomCircleLoc(archStart.x,archStart.y, radius, rand);
             	
             	robotCount = 0;
+            	rc.broadcastSignal(150);
             } catch (Exception e) {
                 // Throwing an uncaught exception makes the robot die, so we need to catch exceptions.
                 // Caught exceptions will result in a bytecode penalty.
@@ -51,10 +55,21 @@ public class RobotPlayer {
                 try {
                 	boolean flag = false;
                     if (rc.isCoreReady()) {
-                    	if(rc.senseNearbyRobots(2, myTeam).length>5){
+                    	if(broadcastCount<1){
+                    		rc.broadcastSignal(150);
+                    		broadcastCount = broadcastCountConstant;
+                    		flag = true;
+                    	}
+                    	else{
+                    		
+                    	
+                    	/*if(rc.senseNearbyRobots(1, myTeam).length>5){
                     		//move
                     		MapLocation ml = rc.getLocation();
                     		if(Math.abs(ml.x - archEnd.x) + Math.abs(ml.y - archEnd.y) < 3 ){
+                    			archEnd = randomCircleLoc(archStart.x,archStart.y, radius, rand);
+                    		}
+                    		if(ml.distanceSquaredTo(archStart) > radius + 1){
                     			archEnd = randomCircleLoc(archStart.x,archStart.y, radius, rand);
                     		}
                     		bugMove(rc, rc.getLocation(), archEnd);
@@ -62,7 +77,7 @@ public class RobotPlayer {
                     		
                     		flag = true;
                     	}
-                    	else{
+                    	else{*/
 	                    	if(buildingBreak <1){
 		                    	if(robotCount==1){
 		                    		if(rc.hasBuildRequirements(RobotType.SCOUT)){
@@ -81,7 +96,7 @@ public class RobotPlayer {
 		                                flag = true;
 		                    		}
 		                    	}
-		                    	else if(robotCount==2){
+		                    	else if(robotCount==3){
 		                    		if(rc.hasBuildRequirements(RobotType.SOLDIER)){
 		                    			Direction dirToBuild = directions[rand.nextInt(8)];
 		                                for (int i = 0; i < 8; i++) {
@@ -125,21 +140,44 @@ public class RobotPlayer {
 		                    	}
 	                    	} 
                     	}
-                    	
-                    	
-	                    if(!flag){
-	                    	//look for parts
-	                    	MapLocation ml = rc.getLocation();
-                    		if(Math.abs(ml.x - archEnd.x) + Math.abs(ml.y - archEnd.y) < 3 ){
-                    			archEnd = randomCircleLoc(archStart.x,archStart.y, radius, rand);
+                    	Signal[] signals = rc.emptySignalQueue();
+                    	for(int i=0;i<signals.length;i++){
+                    		if(signals[i].getTeam() == myTeam){
+                        		int[] msg = signals[i].getMessage();
+                        		if(msg==null){
+                        			MapLocation ml = signals[i].getLocation();
+                        			int dist = rc.getLocation().distanceSquaredTo(ml);
+                        			if(dist < closestArchonDistance && dist>2){
+                        				closestArchon = ml;
+                        				closestArchonDistance = dist;
+                        			}
+                        		}
                     		}
-                    		bugMove(rc, rc.getLocation(), archEnd);
+                    	}
+	                    if(!flag){
+	                    	if(closestArchonDistance>1000){
+		                    	//look for parts
+		                    	MapLocation ml = rc.getLocation();
+	                    		if(Math.abs(ml.x - archEnd.x) + Math.abs(ml.y - archEnd.y) < 3 ){
+	                    			archEnd = randomCircleLoc(archStart.x,archStart.y, radius, rand);
+	                    		}
+	                    		if(ml.distanceSquaredTo(archStart) > radius + 1){
+	                    			archEnd = randomCircleLoc(archStart.x,archStart.y, radius, rand);
+	                    		}
+	                    		bugMove(rc, rc.getLocation(), archEnd);
+	                    	}
+	                    	else{
+	                    		//move toward closest Archon
+	                    		bugMove(rc, rc.getLocation(), closestArchon);
+	                    	}
+	                    	
 	                    }
                     	
                     }
                         
                     buildingBreak --;
-
+                    broadcastCount--;
+                    
                     Clock.yield();
                 } catch (Exception e) {
                     System.out.println(e.getMessage());
@@ -147,7 +185,7 @@ public class RobotPlayer {
                 }
             }
         }
-        else if (rc.getType() == RobotType.TURRET || rc.getType() == RobotType.SOLDIER) {
+        else if (rc.getType() == RobotType.TURRET) {
             try {
                 myAttackRange = rc.getType().attackRadiusSquared;
             } catch (Exception e) {
@@ -161,6 +199,7 @@ public class RobotPlayer {
                 try {
                     // If this robot type can attack, check for enemies within range and attack one
                     if (rc.isWeaponReady()) {
+                    	boolean attkFlag = false;
                         RobotInfo[] enemiesWithinRange = rc.senseNearbyRobots(myAttackRange, enemyTeam);
                         RobotInfo[] zombiesWithinRange = rc.senseNearbyRobots(myAttackRange, Team.ZOMBIE);
                         if (enemiesWithinRange.length > 0) {
@@ -168,6 +207,7 @@ public class RobotPlayer {
                                 // Check whether the enemy is in a valid attack range (turrets have a minimum range)
                                 if (rc.canAttackLocation(enemy.location)) {
                                     rc.attackLocation(enemy.location);
+                                    attkFlag = true;
                                     break;
                                 }
                             }
@@ -175,9 +215,107 @@ public class RobotPlayer {
                             for (RobotInfo zombie : zombiesWithinRange) {
                                 if (rc.canAttackLocation(zombie.location)) {
                                     rc.attackLocation(zombie.location);
+                                    attkFlag = true;
                                     break;
                                 }
                             }
+                        }
+                        Signal[] signals = rc.emptySignalQueue();
+                        
+                        if(!attkFlag){
+                        	//search for enemies to attack from broadcast signals.
+                        	for(int i=0;i<signals.length;i++){
+                        		if(signals[i].getTeam() == myTeam){
+	                        		int[] msg = signals[i].getMessage();
+	                        		if(msg!=null){
+		                        		MapLocation eloc = new MapLocation(msg[0],msg[1]);
+		                        		if (rc.canAttackLocation(eloc)) {
+		                                    rc.attackLocation(eloc);
+		                                    attkFlag = true;
+		                                    break;
+		                                }
+	                        		}
+	                        		else{
+	                        			MapLocation ml = signals[i].getLocation();
+	                        			int dist = rc.getLocation().distanceSquaredTo(ml);
+	                        			if(dist < closestArchonDistance && dist>2){
+	                        				closestArchon = ml;
+	                        				closestArchonDistance = dist;
+	                        			}
+	                        		}
+                        		}
+                        	}
+                        }
+                        
+                    }
+
+                    Clock.yield();
+                } catch (Exception e) {
+                    System.out.println(e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+        }
+        else if(rc.getType() == RobotType.TTM){
+        	
+        }
+        else if (rc.getType() == RobotType.SOLDIER) {
+            try {
+                myAttackRange = rc.getType().attackRadiusSquared;
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+                e.printStackTrace();
+            }
+
+            while (true) {
+                // This is a loop to prevent the run() method from returning. Because of the Clock.yield()
+                // at the end of it, the loop will iterate once per game round.
+                try {
+                    // If this robot type can attack, check for enemies within range and attack one
+                    if (rc.isWeaponReady()) {
+                    	boolean attkFlag = false;
+                        RobotInfo[] enemiesWithinRange = rc.senseNearbyRobots(myAttackRange, enemyTeam);
+                        RobotInfo[] zombiesWithinRange = rc.senseNearbyRobots(myAttackRange, Team.ZOMBIE);
+                        if (enemiesWithinRange.length > 0) {
+                            for (RobotInfo enemy : enemiesWithinRange) {
+                                // Check whether the enemy is in a valid attack range (turrets have a minimum range)
+                                if (rc.canAttackLocation(enemy.location)) {
+                                    rc.attackLocation(enemy.location);
+                                    attkFlag = true;
+                                    break;
+                                }
+                            }
+                        } else if (zombiesWithinRange.length > 0) {
+                            for (RobotInfo zombie : zombiesWithinRange) {
+                                if (rc.canAttackLocation(zombie.location)) {
+                                    rc.attackLocation(zombie.location);
+                                    attkFlag = true;
+                                    break;
+                                }
+                            }
+                        }
+                        Signal[] signals = rc.emptySignalQueue();
+                      //search for closest archon
+                    	for(int i=0;i<signals.length;i++){
+                    		if(signals[i].getTeam() == myTeam){
+                        		int[] msg = signals[i].getMessage();
+                        		
+                        		if(msg==null){
+                        			MapLocation ml = signals[i].getLocation();
+                        			int dist = rc.getLocation().distanceSquaredTo(ml);
+                        			if(dist < closestArchonDistance && dist>2){
+                        				closestArchon = ml;
+                        				closestArchonDistance = dist;
+                        			}
+                        		}
+                    		}
+                    	}
+                        if(!attkFlag){
+                        	if(closestArchonDistance > 50 && closestArchonDistance<500){
+                        		if(rc.isCoreReady()){
+                        			bugMove(rc, rc.getLocation(), closestArchon);
+                        		}
+                        	}
                         }
                     }
 
@@ -187,6 +325,37 @@ public class RobotPlayer {
                     e.printStackTrace();
                 }
             }
+        }
+        else if(rc.getType() == RobotType.SCOUT){
+        	try {
+        		 myAttackRange = 2*rc.getType().sensorRadiusSquared;
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+                e.printStackTrace();
+            }
+        	while (true) {
+        		try {
+        			
+        			RobotInfo[] enemiesWithinRange = rc.senseNearbyRobots(myAttackRange, enemyTeam);
+                    RobotInfo[] zombiesWithinRange = rc.senseNearbyRobots(myAttackRange, Team.ZOMBIE);
+                    if (enemiesWithinRange.length > 0) {
+                        for (RobotInfo enemy : enemiesWithinRange) {
+                       	 rc.broadcastMessageSignal(enemy.location.x, enemy.location.y, myAttackRange);
+                        }
+                    } else if (zombiesWithinRange.length > 0) {
+                        for (RobotInfo zombie : zombiesWithinRange) {
+                        	rc.broadcastMessageSignal(zombie.location.x, zombie.location.y, myAttackRange);
+                        }
+                    }
+        			
+        			
+        			Clock.yield();
+                } catch (Exception e) {
+                    System.out.println(e.getMessage());
+                    e.printStackTrace();
+                }
+        	
+        	}
         }
         else{
         	try {
