@@ -260,10 +260,14 @@ public class RobotPlayer {
 				c++;
 			}
 			if(c<8){
-				rc.move(dir);
+				if(rc.isCoreReady()){
+					rc.move(dir);
+				}
 			}
 			else{
-				rc.clearRubble(dir);
+				if(rc.isCoreReady()){
+					rc.clearRubble(dir);
+				}
 			}
 		} catch (Exception e) {
             System.out.println(e.getMessage());
