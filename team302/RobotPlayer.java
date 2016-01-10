@@ -29,6 +29,8 @@ public class RobotPlayer {
         MapLocation closestArchon = new MapLocation(10000,10000);
         int closestArchonDistance = rc.getLocation().distanceSquaredTo(closestArchon);
         int radius = 5;
+        int turretMove = -2;
+        int turretMoveConstant = 5;
         if (rc.getType() == RobotType.ARCHON) {
             try {
                 // Any code here gets executed exactly once at the beginning of the game.
@@ -41,7 +43,7 @@ public class RobotPlayer {
             	archEnd = randomCircleLoc(archStart.x,archStart.y, radius, rand);
             	
             	robotCount = 0;
-            	rc.broadcastSignal(150);
+            	rc.broadcastSignal(250);
             } catch (Exception e) {
                 // Throwing an uncaught exception makes the robot die, so we need to catch exceptions.
                 // Caught exceptions will result in a bytecode penalty.
@@ -58,12 +60,11 @@ public class RobotPlayer {
                     	if(broadcastCount<1){
                     		rc.broadcastSignal(150);
                     		broadcastCount = broadcastCountConstant;
+                    		archStart = rc.getLocation();
+                    		archEnd = archStart;
                     		flag = true;
                     	}
-                    	else{
-                    		
-                    	
-                    	/*if(rc.senseNearbyRobots(1, myTeam).length>5){
+                    	else if(rc.senseNearbyRobots(2, myTeam).length>6){
                     		//move
                     		MapLocation ml = rc.getLocation();
                     		if(Math.abs(ml.x - archEnd.x) + Math.abs(ml.y - archEnd.y) < 3 ){
@@ -77,7 +78,7 @@ public class RobotPlayer {
                     		
                     		flag = true;
                     	}
-                    	else{*/
+                    	else{
 	                    	if(buildingBreak <1){
 		                    	if(robotCount==1){
 		                    		if(rc.hasBuildRequirements(RobotType.SCOUT)){
@@ -155,7 +156,7 @@ public class RobotPlayer {
                     		}
                     	}
 	                    if(!flag){
-	                    	if(closestArchonDistance>1000){
+	                    	if(closestArchonDistance>1000 && closestArchonDistance < 10){
 		                    	//look for parts
 		                    	MapLocation ml = rc.getLocation();
 	                    		if(Math.abs(ml.x - archEnd.x) + Math.abs(ml.y - archEnd.y) < 3 ){
@@ -198,38 +199,45 @@ public class RobotPlayer {
                 // at the end of it, the loop will iterate once per game round.
                 try {
                     // If this robot type can attack, check for enemies within range and attack one
-                    if (rc.isWeaponReady()) {
-                    	boolean attkFlag = false;
-                        RobotInfo[] enemiesWithinRange = rc.senseNearbyRobots(myAttackRange, enemyTeam);
-                        RobotInfo[] zombiesWithinRange = rc.senseNearbyRobots(myAttackRange, Team.ZOMBIE);
-                        if (enemiesWithinRange.length > 0) {
-                            for (RobotInfo enemy : enemiesWithinRange) {
-                                // Check whether the enemy is in a valid attack range (turrets have a minimum range)
-                                if (rc.canAttackLocation(enemy.location)) {
-                                    rc.attackLocation(enemy.location);
-                                    attkFlag = true;
-                                    break;
-                                }
-                            }
-                        } else if (zombiesWithinRange.length > 0) {
-                            for (RobotInfo zombie : zombiesWithinRange) {
-                                if (rc.canAttackLocation(zombie.location)) {
-                                    rc.attackLocation(zombie.location);
-                                    attkFlag = true;
-                                    break;
-                                }
-                            }
-                        }
-                        Signal[] signals = rc.emptySignalQueue();
-                        
-                        if(!attkFlag){
-                        	//search for enemies to attack from broadcast signals.
-                        	for(int i=0;i<signals.length;i++){
-                        		if(signals[i].getTeam() == myTeam){
+                	if(rc.getType()==RobotType.TURRET){
+                		
+                	
+	                	boolean attkFlag = false;
+	                    if (rc.isWeaponReady()) {
+	                    	
+	                        RobotInfo[] enemiesWithinRange = rc.senseNearbyRobots(myAttackRange, enemyTeam);
+	                        RobotInfo[] zombiesWithinRange = rc.senseNearbyRobots(myAttackRange, Team.ZOMBIE);
+	                        if (enemiesWithinRange.length > 0) {
+	                            for (RobotInfo enemy : enemiesWithinRange) {
+	                                // Check whether the enemy is in a valid attack range (turrets have a minimum range)
+	                                if (rc.canAttackLocation(enemy.location)) {
+	                                    rc.attackLocation(enemy.location);
+	                                    attkFlag = true;
+	                                    break;
+	                                }
+	                            }
+	                        } else if (zombiesWithinRange.length > 0) {
+	                            for (RobotInfo zombie : zombiesWithinRange) {
+	                                if (rc.canAttackLocation(zombie.location)) {
+	                                    rc.attackLocation(zombie.location);
+	                                    attkFlag = true;
+	                                    break;
+	                                }
+	                            }
+	                        }
+	                        
+	                        
+	                    }
+	                    Signal[] signals = rc.emptySignalQueue();
+	                    
+	                    if(!attkFlag){
+	                    	//search for enemies to attack from broadcast signals.
+	                    	for(int i=0;i<signals.length;i++){
+	                    		if(signals[i].getTeam() == myTeam){
 	                        		int[] msg = signals[i].getMessage();
 	                        		if(msg!=null){
 		                        		MapLocation eloc = new MapLocation(msg[0],msg[1]);
-		                        		if (rc.canAttackLocation(eloc)) {
+		                        		if (rc.canAttackLocation(eloc) && rc.isWeaponReady()) {
 		                                    rc.attackLocation(eloc);
 		                                    attkFlag = true;
 		                                    break;
@@ -243,11 +251,26 @@ public class RobotPlayer {
 	                        				closestArchonDistance = dist;
 	                        			}
 	                        		}
-                        		}
-                        	}
-                        }
-                        
-                    }
+	                    		}
+	                    	}
+	                    	if(!attkFlag && closestArchonDistance < 500 && closestArchonDistance > 10 && turretMove==-2){
+	                    		rc.pack();
+	                    		turretMove = turretMoveConstant;
+	                    	}
+	                    }
+                	}
+                	else{
+            			if(rc.isCoreReady()){
+                			if(turretMove>0)
+                			{
+                    			bugMove(rc, rc.getLocation(), closestArchon);
+                    			turretMove--;
+                			}
+                			else{
+                        		rc.unpack();
+                			}
+            			}
+                	}
 
                     Clock.yield();
                 } catch (Exception e) {
@@ -257,7 +280,30 @@ public class RobotPlayer {
             }
         }
         else if(rc.getType() == RobotType.TTM){
-        	
+        	try {
+                
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+                e.printStackTrace();
+            }
+        	while (true) {
+                // This is a loop to prevent the run() method from returning. Because of the Clock.yield()
+                // at the end of it, the loop will iterate once per game round.
+                try {
+                	if(closestArchonDistance > 10 && closestArchonDistance<500){
+                		if(rc.isCoreReady()){
+                			bugMove(rc, rc.getLocation(), closestArchon);
+                		}
+                	}
+                	else{
+                		rc.unpack();
+                	}
+                } catch (Exception e) {
+                    System.out.println(e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+                
         }
         else if (rc.getType() == RobotType.SOLDIER) {
             try {
