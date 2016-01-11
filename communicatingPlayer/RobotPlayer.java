@@ -54,7 +54,7 @@ public class RobotPlayer{
 			if (radio[n].getTeam().equals(currentTeam)){
 				int[] message= radio[n].getMessage();
 				if (message!=null){//If there is something in the message
-					
+			
 				}
 			}
 		}
@@ -75,6 +75,7 @@ public class RobotPlayer{
 			Direction moveDir= rc.getLocation().directionTo(randomPlace);
 			if (rc.canMove(moveDir)){
 				rc.move(moveDir);
+				System.out.println(rc.getLocation().toString()+ " "+ rc.getRoundNum());
 			}
 			if (rc.getLocation().equals(randomPlace)){
 				randomPlace= new MapLocation(436,170);
