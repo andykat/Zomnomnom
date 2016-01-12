@@ -3,7 +3,7 @@ package communicatingPlayer;
 import java.util.Arrays;
 import java.util.Vector;
 
-public class MessageTransfer implements MessageKeys{
+public class MessageTransfer implements MessageConstants{
 	
 	public Vector<Integer> decryptMessage(int[] receivedMessage){
 		//Find message id
@@ -29,16 +29,16 @@ public class MessageTransfer implements MessageKeys{
 			int startNum= 4;
 			
 			if (messageType== 0){ //CHARACTER MESSAGE
-				for (int n= 0; n< MessageKeys.charMesDistr.length; n++){
+				for (int n= 0; n< MessageConstants.charMesDistr.length; n++){
 					System.out.println("\tcharacterType");
-					answer.add(getPart(binary,startNum, startNum+MessageKeys.charMesDistr[n]));
-					startNum+= MessageKeys.charMesDistr[n];
+					answer.add(getPart(binary,startNum, startNum+MessageConstants.charMesDistr[n]));
+					startNum+= MessageConstants.charMesDistr[n];
 				}
 			}else if (messageType== 1){ //MAP MESSAGE
 				System.out.println("\tmapType");
-				for (int n= 0; n< MessageKeys.mapMesDistr.length; n++){
-					answer.add(getPart(binary,startNum, startNum+MessageKeys.mapMesDistr[n]));
-					startNum+= MessageKeys.mapMesDistr[n];
+				for (int n= 0; n< MessageConstants.mapMesDistr.length; n++){
+					answer.add(getPart(binary,startNum, startNum+MessageConstants.mapMesDistr[n]));
+					startNum+= MessageConstants.mapMesDistr[n];
 				}				
 			}
 		}	
@@ -49,10 +49,10 @@ public class MessageTransfer implements MessageKeys{
 	public int[] createMessage(int idType, int[] message){//Returns -1 on failure
 		int[] answer= new int[2];
 		if (idType== 0){ //Character message
-			int[] distribution= MessageKeys.charMesDistr;
+			int[] distribution= MessageConstants.charMesDistr;
 			answer = createMessage(idType, distribution, message);
 		}else if (idType== 1){
-			int[] distibution= MessageKeys.mapMesDistr;
+			int[] distibution= MessageConstants.mapMesDistr;
 			answer= createMessage(idType, distibution, message);
 		}
 		

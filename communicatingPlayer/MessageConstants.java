@@ -1,6 +1,6 @@
 package communicatingPlayer;
 
-public interface MessageKeys {
+public interface MessageConstants {
 	//only 31 bit per integer because largest number for an int is 1 followed by 31 zeros
 	//First four bytes of the integer then is reserved, and last byte is also reserved, the middle 59 bytes are free to use
 	//Message type ranges from 0 ~7, currently 0~1 is occupied
