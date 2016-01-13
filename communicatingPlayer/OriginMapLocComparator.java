@@ -12,6 +12,7 @@ public class OriginMapLocComparator implements Comparator<MapLocation>{//For pri
 	public void setBase(MapLocation newBase){ //Doubt will ever need to change, but just in case
 		this.base= newBase;
 	}
+	
 	@Override
 	public int compare(MapLocation loc1, MapLocation loc2) {
 		int answer= 0;
