@@ -7,7 +7,9 @@ import java.util.Random;
 import java.util.function.Function;
 
 public class RobotPlayer {
-
+	int destx = 130;
+	int desty = 230;
+	
     /**
      * run() is the method that is called when a robot is instantiated in the Battlecode world.
      * If this method returns, the robot dies!
@@ -39,69 +41,8 @@ public class RobotPlayer {
 			}
 		}
 		
-		/*returns two integers used for the signal
-      * takes arrayList as an input created from the hashMessagePrep method
-      * lambda is fucking weird
-      */
-     Function<ArrayList<Integer>,int[]> hashMessage = m -> {
-     	int[] reMsg = new int[2];
-     	int msgType = m.get(0);
-     	reMsg[0] = msgType - 2147483647;
-     	int list0Length = m.get(1);
-     	int list1Length = m.get(2);
-     	int multiplier = 16;
-     	int curIndex = 3;
-     	for(int i=list0Length-1;i>-1;i--){
-     		reMsg[0] += multiplier * m.get(i+curIndex);
-     		multiplier *= ranges0[msgType][i];
-     	}
-     	curIndex += list0Length;
-     	
-     	multiplier = 1;
-     	reMsg[1] = -2147483647;
-     	for(int i=list1Length-1;i>-1;i--){
-     		reMsg[1] += multiplier * m.get(i+curIndex);
-     		multiplier *= ranges1[msgType][i];
-     	}
-     	return reMsg;
-     };
+		
      
-     /*
-      * takes in an int list of length 2 (signal).
-      * returns a 2d array list of size 2 containing 2 lists of ints
-      */
-     Function<int[], int[][]> unhashMessage = s -> {
-     	long l0 = s[0];
-         l0 += 2147483647;
-         long l1 = s[1];
-         l1 += 2147483647;
-         int msgType = (int) (l0%16);
-         int[] list0 = new int[ranges0[msgType].length];
-     	int[] list1 = new int[ranges1[msgType].length];
-     	
-         int product0 = ranges0Product[msgType];
-         for(int i=0;i<list0.length-1;i++){
-         	list0[i] = (int)(l0/product0);
-         	l0 -= list0[i] * product0;
-         	product0 /= ranges0[msgType][i+1];
-         }
-         list0[list0.length-1] = (int)l0/product0;
-         
-         int product1 = ranges1Product[msgType];
-         for(int i=0;i<list1.length-1;i++){
-         	list1[i] = (int)(l1/product1);
-         	l1 -= list1[i] * product1;
-         	product1 /= ranges1[msgType][i+1];
-         }
-         list1[list1.length-1] = (int)l1/product1;
-     	
-     	int[][] rList = {list0, list1};
-     	return rList;
-     };
-     ////
-     ////
-        
-        
         int myAttackRange = 0;
         Team myTeam = rc.getTeam();
         Team enemyTeam = myTeam.opponent();
@@ -111,9 +52,10 @@ public class RobotPlayer {
         		///////////////////////////
         		// Preparing the signals to send
         		/////////////////////////
-        		int[] list0 = {1,45,97,12,12};
-                int[] list1 = {2,3,2,11,11,11,11};
-                signalInts = hashMessage.apply(hashMessagePrep(0,list0,list1));
+        		/*int[] list0 = {1,45,97,12,12};
+                int[] list1 = {2,3,2,11,11,11,11};*/
+                //signalInts = hashMessage.apply(hashMessagePrep(0,list0,list1));
+                
         	} catch (Exception e) {
 
                 System.out.println(e.getMessage());
@@ -123,7 +65,17 @@ public class RobotPlayer {
             try {
                 while(true){
                 	if(rc.isCoreReady()){
-                		rc.broadcastMessageSignal(signalInts[0],signalInts[1] , 400);
+                		Signal[] signals = rc.emptySignalQueue();
+                		if(rc.getMessageSignalCount()==0){
+                			/*int[] list0 = {1,45,97,12,12};
+                            int[] list1 = {2,3,2,11,11,11,11};
+                            signalInts = hashMessage.apply(hashMessagePrep(0,list0,list1));*/
+                			int[] list0 = {1,45,97,12,12};
+                            int[] list1 = {2,3,2,11,11,11,11};
+                            int messageType = 0;
+                            signalInts = hashMessage(messageType, list0, list1, ranges0[messageType], ranges1[messageType]);
+                			rc.broadcastMessageSignal(signalInts[0],signalInts[1] , RobotType.SCOUT.sensorRadiusSquared);
+                		}
                         if (rc.hasBuildRequirements(RobotType.SCOUT)) {
                             // Choose a random direction to try to build in
                             Direction dirToBuild = directions[rand.nextInt(8)];
@@ -142,7 +94,7 @@ public class RobotPlayer {
                 	///////////////////////////
                 	// Preparing the signals to send
                 	/////////////////////////
-                	
+                	Clock.yield();
                 }
             } catch (Exception e) {
 
@@ -171,17 +123,20 @@ public class RobotPlayer {
 	                        			///////////////////////////
 	                                	// Unhash signal from 2 ints into 2 lists
 	                                	/////////////////////////
-	                        			int [][] lists = unhashMessage.apply(msg);
+	                        			int messageType = 0;
+	                        			int [][] lists = unhashMessage(msg, ranges0[messageType], ranges1[messageType], ranges0Product[messageType], ranges1Product[messageType]);
 	                        			
 	                        			//dumbass ~200 xy coordinate offset
 	                        			MapLocation dest = new MapLocation(lists[0][1] + 100,lists[0][2] + 200);
-	                        			
+	                        			//MapLocation dest = new MapLocation(150,250);
 		                        		bugMove(rc, rc.getLocation(), dest);
 		                        		break;
 	                        		}
 	                    		}
 	                    	}
+	                    	
         			}
+        			Clock.yield();
         		}
         	} catch (Exception e) {
         		
@@ -199,20 +154,62 @@ public class RobotPlayer {
      * The second number has 32 bits, so the product is less than 4294967296
      * Two integers are returned, and to be used as the two integers in the signal 
      * */ 
-    public static ArrayList<Integer> hashMessagePrep(int msgType, int[] list0, int[] list1){
-    	ArrayList<Integer> m = new ArrayList<Integer>();
-    	m.add(msgType);
-    	m.add(list0.length);
-    	m.add(list1.length);
-    	for(int i=0;i<list0.length;i++){
-    		m.add(list0[i]);
-    	}
-    	for(int i=0;i<list1.length;i++){
-    		m.add(list1[i]);
-    	}
-    	return m;
+    /*returns two integers used for the signal
+     * takes arrayList as an input created from the hashMessagePrep method
+     * lambda is fucking weird
+     */
+    
+    public static int[] hashMessage(int msgType, int[] list0, int[] list1, int[] ranges0, int[] ranges1){
+    	int[] reMsg = new int[2];
+     	reMsg[0] = msgType - 2147483647;
+     	
+     	int multiplier = 16;
+     	for(int i=list0.length-1;i>-1;i--){
+     		reMsg[0] += multiplier * list0[i];
+     		multiplier *= ranges0[i];
+     	}
+     	
+     	multiplier = 1;
+     	reMsg[1] = -2147483647;
+     	for(int i=list1.length-1;i>-1;i--){
+     		reMsg[1] += multiplier * list1[i];
+     		multiplier *= ranges1[i];
+     	}
+     	return reMsg;
     }
     
+    /*
+     * takes in an int list of length 2 (signal).
+     * returns a 2d array list of size 2 containing 2 lists of ints
+     */
+    public static int[][] unhashMessage(int[] s, int[] ranges0, int[] ranges1, int product0, int product1){
+     	long l0 = s[0];
+         l0 += 2147483647;
+         long l1 = s[1];
+         l1 += 2147483647;
+         int msgType = (int) (l0%16);
+         int[] list0 = new int[ranges0.length];
+     	int[] list1 = new int[ranges1.length];
+     	
+        // int product0 = ranges0Product[msgType];
+         for(int i=0;i<list0.length-1;i++){
+         	list0[i] = (int)(l0/product0);
+         	l0 -= list0[i] * product0;
+         	product0 /= ranges0[i+1];
+         }
+         list0[list0.length-1] = (int)l0/product0;
+         
+         //int product1 = ranges1Product[msgType];
+         for(int i=0;i<list1.length-1;i++){
+         	list1[i] = (int)(l1/product1);
+         	l1 -= list1[i] * product1;
+         	product1 /= ranges1[i+1];
+         }
+         list1[list1.length-1] = (int)l1/product1;
+     	
+     	int[][] rList = {list0, list1};
+     	return rList;
+     };
     public static void bugMove(RobotController rc, MapLocation start, MapLocation end){
 		try {
 			Direction dir = start.directionTo(end);
