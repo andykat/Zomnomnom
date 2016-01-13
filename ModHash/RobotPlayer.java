@@ -20,24 +20,44 @@ public class RobotPlayer {
         RobotType[] robotTypes = {RobotType.SCOUT, RobotType.SOLDIER, RobotType.SOLDIER, RobotType.SOLDIER,
                 RobotType.GUARD, RobotType.GUARD, RobotType.VIPER, RobotType.TURRET};
         Random rand = new Random(rc.getID());
-        
+        ////Communication stuff
+        ////
         int[][] ranges0 = {{4,50,100,50,100},
         				   {}
         				  };
         int[][] ranges1 = {{4,4,4,50,100,50,100},
         				   {}
         				  };
+        /*returns two integers used for the signal
+         * takes arrayList as an input created from the hashMessagePrep method
+         * lambda is fucking weird
+         */
         Function<ArrayList<Integer>,int[]> hashMessage = m -> {
         	int[] reMsg = new int[2];
-        	reMsg[0] = m.get(0);
+        	int msgType = m.get(0);
+        	reMsg[0] = msgType;
+        	int list0Length = m.get(1);
+        	int list1Length = m.get(2);
         	int multiplier = 16;
-        	for(int i=0;i<list0.length;i++){
-        		reMsg[0] += multiplier + list0[i];
+        	int curIndex = 3;
+        	for(int i=list0Length-1;i>-1;i--){
+        		reMsg[0] += multiplier * m.get(i+curIndex);
         		multiplier *= ranges0[msgType][i];
-        		
+        	}
+        	curIndex += list0Length;
+        	
+        	multiplier = 1;
+        	reMsg[1] = 0;
+        	for(int i=list1Length-1;i>-1;i--){
+        		reMsg[1] += multiplier * m.get(i+curIndex);
+        		multiplier *= ranges1[msgType][i];
         	}
         	return reMsg;
         };
+        ////
+        ////
+        
+        
         int myAttackRange = 0;
         Team myTeam = rc.getTeam();
         Team enemyTeam = myTeam.opponent();
@@ -62,7 +82,7 @@ public class RobotPlayer {
      * The second number has 32 bits, so the product is less than 4294967296
      * Two integers are returned, and to be used as the two integers in the signal 
      * */ 
-    public static ArrayList<Integer> hashMessage(int msgType, int[] list0, int[] list1){
+    public static ArrayList<Integer> hashMessagePrep(int msgType, int[] list0, int[] list1){
     	ArrayList<Integer> m = new ArrayList<Integer>();
     	m.add(msgType);
     	m.add(list0.length);
