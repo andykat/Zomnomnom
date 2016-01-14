@@ -1,61 +1,67 @@
 package communicatingPlayer;
 import battlecode.common.*;
+import communicatingPlayer.RobotConstants.mapTypes;
+
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
-import java.util.Vector;
+import java.util.Map.Entry;
+import java.util.Queue;
 
 //MAP ITERATION: http://stackoverflow.com/questions/46898/how-to-efficiently-iterate-over-each-entry-in-a-map
-
 //20 message signals max per turn
 
 public class Information {
-	Map<MapLocation,int[]> map = new HashMap<MapLocation,int[]>(); //Static elements, can be updated more slowly? ID: 0
-		//int[rubbleCount,PartsCount,DenHealth,NeutralCharacterID,NeutralCharacterHealth]
-	Map<MapLocation,RobotInfo> enemyActors = new HashMap<MapLocation,RobotInfo>(); //More urgently needs to be updated ID: 1
-		//int[characterID, characterTypeID, characterHealth,characterInfectionCount]
-	Map<MapLocation,RobotInfo> friendlyActors = new HashMap<MapLocation,RobotInfo>(); //More urgently needs to be updated ID: 2
-	/* 
-	 * Character Type IDs:
-	 * 		0,Friendly Archon
-	 * 		1,Friendly Scout
-	 * 		2,Friendly Soldier
-	 * 		3,Friendly Guard
-	 * 		4,Friendly Viper
-	 * 		5,Friendly Turret
-	 * 		6,Friendly TTM
-	 * 		7,Neutral Archon
-	 * 		8,Neutral Scout
-	 * 		9,Neutral Soldier
-	 * 		10,Neutral Gaurd
-	 * 		11,Neutral Viper
-	 * 		12,Neutral Turret
-	 * 		13,Neutral TTM
-	 * 	 	14,Enemy Archon
-	 * 		15,Enemy Scout
-	 * 		16,Enemy Soldier
-	 * 		17,Enemy Gaurd
-	 * 		18,Enemy Viper
-	 * 		19,Enemy Turret
-	 * 		20,Enemy TTM
-	 * 		21,Zombie Standard
-	 * 		22,Zombie Ranged
-	 * 		23,Zombie Fast
-	 * 		24,Zombie Big		
-	 */
+	private Map<MapLocation,int[]> map = new HashMap<MapLocation,int[]>();
+		//int[rubbleCount,PartsCount,DenHealth,NeutralCharacterType]
+	private Queue downloadQueue= new LinkedList<int[]>();
 	
-	//GETTING BITS: http://stackoverflow.com/questions/9354860/how-to-get-the-value-of-a-bit-at-a-certain-position-from-a-byte
-	
-	public int encapsInformation(){
-		 //Maybe it stores percentage instead of actual health, to truncate, i.e. xxxyyycchhiirrppdd
-		return 0;
+	public int getRobotIntType(RobotType rt){
+		int answer= -1;
+		for (int n= 1; n< RobotConstants.posNRobotTypes.length; n++){
+			if (RobotConstants.posNRobotTypes[n].equals(rt)){
+				answer= n;
+				break;
+			}
+		}
+		return answer;
 	}
 	
-	public void updateInformation(int inputData){ //How jam packed can an integer be?
-		//TODO decrypt the message
-		//Update the map based on the information
+	public int getBrainSize(){
+		return map.size();
 	}
 	
-	public int[] getInformation(MapLocation loc){ //Pinpoint
+	public void addMapInfo(MapLocation loc, RobotInfo ri){
+		addInfo(loc, 3, getRobotIntType(ri.type));
+	}
+	
+	public void addMapInfo(MapLocation loc, int value, RobotConstants.mapTypes mapType){
+		if (mapType.equals(RobotConstants.mapTypes.RUBBLE)){
+			addInfo(loc,0, value);
+		}else if (mapType.equals(RobotConstants.mapTypes.PARTS)){
+			addInfo(loc,1, value);
+		}else if (mapType.equals(RobotConstants.mapTypes.ZOMBIE_DEN)){
+			addInfo(loc,2,value);
+		}
+	}
+	
+	private void addInfo(MapLocation key, int index, int value){
+		if (map.containsKey(key)){
+			map.get(key)[index]= value;
+		}else{
+			int[] info= new int[4];
+			info[index]= value;
+			map.put(key, info);
+		}
+	}
+	
+	public void addMapInfo(MapLocation loc, int rubbleCount, int partsCount, int denHealth,RobotInfo ri){
+		int[] info= {rubbleCount, partsCount, denHealth, getRobotIntType(ri.type)};
+		map.put(loc, info); //Old value will get replaced
+	}
+	
+	public int[] getInformation(MapLocation loc){
 		int[] answer= null;
 		if (map.containsKey(loc)){
 			answer= map.get(loc);
@@ -63,26 +69,18 @@ public class Information {
 		return answer;
 	}
 	
-	public Vector<int[]> getMap(){
-		return null;
+	public void printInfo(){
+		for (Entry<MapLocation, int[]> entry : map.entrySet()){
+		    System.out.println("\t"+entry.getKey() + "/" + Arrays.toString(entry.getValue()));
+		}
 	}
 	
-	public Vector<int[]> getFriendly(){
-		return null;
-	}
-	
-	public Vector<int[]> getEnemy(){
-		return null;
-	}
-	
-	public boolean test(){
-		boolean answer= false;
-		
-		//Rubble: 434,433,432 | 159
-		//Parts: 435 | 157,158,159
-		//People: 
-		
-		return answer;
+	public void createQueue(){
+		for (Entry<MapLocation, int[]> entry : map.entrySet()){
+			//entry.getKey() 
+			//entry.getValue()
+			//Create message
+		}
 	}
 	
 }

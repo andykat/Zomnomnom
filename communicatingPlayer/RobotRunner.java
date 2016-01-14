@@ -49,14 +49,20 @@ public class RobotRunner {
 					answer.add(visitingSpot); //For the scout himself to check
 					rc.setIndicatorDot(visitingSpot, 255, 0, 0);
 				}
-				System.out.println(n);
+				//System.out.println(n);
 			}
 		}
 		return answer;
 	}
 	
-	public ArrayList<MapLocation> cleanLocationList(ArrayList<MapLocation> visitingList){
-		return null;
+	public MapLocation checkLocation(MapLocation check) throws GameActionException{ //returns null on invalid map
+		MapLocation answer= check;
+		if (rc.canSense(check)){
+			if (rc.onTheMap(check)== false){
+				answer= null;
+			}
+		}
+		return answer;
 	}
 	
 	public void simpleMove(Direction dirToMove) throws GameActionException{

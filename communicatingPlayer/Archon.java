@@ -3,24 +3,44 @@ package communicatingPlayer;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
+import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 
 public class Archon extends RobotRunner {
-	private int scoutCount= 5;
+	private enum mode{MAKE_SBABY,WAIT_FOR_BABY};
+	private mode currentMode;
+	private Information memory;
+	private RobotInfo baby;
 	
 	public Archon(RobotController rcin) {
 		super(rcin);
+		memory= new Information();
+		currentMode= mode.MAKE_SBABY;
 	}
 	
 	public void run() throws GameActionException{
 		if (rc.isCoreReady()){
-			if (rc.canBuild(Direction.NORTH, RobotType.SCOUT)){
-				if (scoutCount> 0){
+			switch (currentMode){
+			case MAKE_SBABY:
+				if (rc.canBuild(Direction.NORTH, RobotType.SCOUT)){
 					rc.build(Direction.NORTH, RobotType.SCOUT);
-					scoutCount--;
+					RobotInfo[] potentialBabies= rc.senseNearbyRobots(1);
+					for (int n= 0; n< potentialBabies.length; n++){
+						if (potentialBabies[n].type.equals(RobotType.SCOUT)){
+							baby= potentialBabies[n];
+							System.out.println("FOUND BABY!");
+							currentMode= mode.WAIT_FOR_BABY;
+							break;
+						}
+					}
 				}
+				break;
+			case WAIT_FOR_BABY:
+				
+			default:
+				//Move back towards the archon?
+				break;
 			}
 		}
 	}
-
 }
