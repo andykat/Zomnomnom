@@ -41,7 +41,9 @@ public class RobotRunner {
 			}
 			else{
 				if(rc.isCoreReady()){
-					rc.clearRubble(dir);
+					if (rc.canSense(rc.getLocation().add(dir)) && rc.onTheMap(rc.getLocation().add(dir))){
+						rc.clearRubble(dir);
+					}
 				}
 			}
 		} catch (Exception e) {

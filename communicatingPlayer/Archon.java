@@ -25,7 +25,7 @@ public class Archon extends RobotRunner {
 				Direction canBuildDir= getSpawnableDir(RobotType.SCOUT);
 				if (canBuildDir!= null){
 					rc.build(canBuildDir, RobotType.SCOUT);
-					RobotInfo[] potentialBabies= rc.senseNearbyRobots(1);
+					RobotInfo[] potentialBabies= rc.senseNearbyRobots(2);
 					for (int n= 0; n< potentialBabies.length; n++){
 						if (potentialBabies[n].type.equals(RobotType.SCOUT)){
 							baby= potentialBabies[n];

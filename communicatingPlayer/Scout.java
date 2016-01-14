@@ -12,14 +12,17 @@ public class Scout extends RobotRunner {
 	private enum mode{GET_SEED, LOOK_FOR_MOM,GO_TO_MOM,PATROL,SEARCH,TALK_TO_MOM};
 	private mode currentMode;
 	private int visitingIndex= 0;
-	private boolean needToCheckOnMap= true;
 	private Information memory;
 	private int fullness= 0; //Once it exceeds the scout hunger amount, gets reset to zero and move on to next target
+	private int searchLevel= 10;
+	private int roundSearchStart;
+	private int roundSeearchStopped;
+	private int previousRoundTime;
 	
 	public Scout(RobotController rcin) throws GameActionException {
 		super(rcin);
 		visitingList= new ArrayList<MapLocation>();
-		visitingList= createDividedRadius(RobotConstants.SCOUT_SEARCH_RANGE,10);
+		visitingList= createDividedRadius(RobotConstants.SCOUT_SEARCH_RANGE,searchLevel);
 		currentMode= mode.LOOK_FOR_MOM;
 		homeBase= rc.getLocation();
 		memory= new Information();
@@ -30,11 +33,12 @@ public class Scout extends RobotRunner {
 		if (rc.isCoreReady()){
 			switch (currentMode){
 			case LOOK_FOR_MOM:
-				RobotInfo[] fambam= rc.senseNearbyRobots(1);
+				RobotInfo[] fambam= rc.senseNearbyRobots(2);
 				for (int n= 0; n< fambam.length; n++){
 					if (fambam[n].type.equals(RobotType.ARCHON)){
 						mom= fambam[n];
 						currentMode= mode.SEARCH;
+						roundSearchStart= rc.getRoundNum();
 						break;
 					}
 				}
@@ -42,14 +46,15 @@ public class Scout extends RobotRunner {
 				break;
 			
 			case SEARCH://=============================================================
+				//System.out.println("fullness: "+ fullness);
 				if (targetAttraction== null && visitingList.size()> 0){ //If you currently aren't going any where and you want to go somewhere
 					targetAttraction= visitingList.get(visitingIndex);
 				}else if (targetAttraction!= null){ //If you want to go somewhere
 					if (rc.getLocation().equals(targetAttraction)){//If you are at designated node
 						visitingIndex+= 1;
+						fullness= 0;
 						if (visitingIndex > visitingList.size()-1){ 
 							visitingIndex= 0; //Loop back
-							needToCheckOnMap= false; //You've gone through the entire loop once
 							currentMode= mode.GO_TO_MOM;
 						}
 						targetAttraction= visitingList.get(visitingIndex);
@@ -89,21 +94,21 @@ public class Scout extends RobotRunner {
 						//simpleMove(rc.getLocation().directionTo(targetAttraction));
 						bugMove(rc.getLocation(), targetAttraction);
 						fullness+= 1;
-						
-						if (needToCheckOnMap){ //unecessary unless you want to patrol, but for LATER
-							MapLocation testLocation= checkLocation(targetAttraction);
-							if (testLocation== null){ //If the location is not on the map or times up
-								visitingList.remove(targetAttraction);
-								if (visitingIndex > visitingList.size()-1){
-									visitingIndex= visitingList.size()-1;
-								}
-						
-								targetAttraction= visitingList.get(visitingIndex);
-							}else if (fullness > RobotConstants.SCOUT_HUNGER){ //After you search for a while, sometimes it is better to be content #LIFELESSON
-								fullness= 0;
-								visitingList.set(visitingIndex, rc.getLocation());
-								targetAttraction= rc.getLocation();
+					
+						MapLocation testLocation= checkLocation(targetAttraction);
+						if (testLocation== null){ //If the location is not on the map or times up
+							visitingList.remove(targetAttraction);
+							if (visitingIndex > visitingList.size()-1){
+								visitingIndex= visitingList.size()-1;
 							}
+					
+							targetAttraction= visitingList.get(visitingIndex);
+						}
+						
+						if (fullness > Math.sqrt(RobotType.SCOUT.sensorRadiusSquared)){ //After you search for a while, sometimes it is better to be content #LIFELESSON
+							fullness= 0;
+							visitingList.set(visitingIndex, rc.getLocation());
+							targetAttraction= rc.getLocation();
 						}
 					}
 				}else{
@@ -122,7 +127,23 @@ public class Scout extends RobotRunner {
 				}
 				break;
 			case TALK_TO_MOM:
+				//When you're done
+				targetAttraction= null;
+				visitingList.clear();
+				searchLevel+= RobotConstants.SCOUT_SEARCH_RANGE*2;
+				visitingList= createDividedRadius(RobotConstants.SCOUT_SEARCH_RANGE,searchLevel);
 				
+				//punch time card
+				roundSeearchStopped= rc.getRoundNum();
+				int testRoundNum= roundSeearchStopped- roundSearchStart;
+				if (previousRoundTime == testRoundNum || searchLevel > 80){//Done searching! 
+					System.out.println("Done searching!");
+					currentMode= mode.PATROL;
+				}else{
+					previousRoundTime= testRoundNum;
+					roundSearchStart= rc.getRoundNum();
+					currentMode= mode.SEARCH;
+				}
 				break;
 			default:
 				//Move back towards the archon?

@@ -4,7 +4,6 @@ import battlecode.common.Direction;
 import battlecode.common.RobotType;
 
 public interface RobotConstants {
-	public static int SCOUT_HUNGER= 10;// number after which the robot would eat its way towards the goal 
     public static Direction[] directions = {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST, Direction.SOUTH_EAST,
             Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST};
     public static int SCOUT_MESSAGE_READ_LIMIT= 25;
