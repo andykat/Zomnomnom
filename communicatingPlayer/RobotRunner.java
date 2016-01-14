@@ -42,7 +42,8 @@ public class RobotRunner {
 			else{
 				if(rc.isCoreReady()){
 					if (rc.canSense(rc.getLocation().add(dir)) && rc.onTheMap(rc.getLocation().add(dir))){
-						rc.clearRubble(dir);
+						if (rc.senseRubble(rc.getLocation().add(dir)) > 0)
+							rc.clearRubble(dir);
 					}
 				}
 			}
@@ -83,22 +84,25 @@ public class RobotRunner {
 	
 	public ArrayList<MapLocation> createDividedRadius(int searchRange, int radius) throws GameActionException{
 		ArrayList<MapLocation> answer= new ArrayList<MapLocation>();
-		double angle= 360/(int)(180/Math.toDegrees(Math.asin(searchRange*1.0/(2*radius))));
-		//System.out.println("ANGLE: "+Math.toDegrees(angle));
-		if (angle!= 0){
-			for (int n= 0; n< 360; n+= angle){
-				int px= (int) (radius*Math.cos(Math.toRadians(n)));
-				int py= (int) (radius*Math.sin(Math.toRadians(n)));
-				MapLocation visitingSpot= new MapLocation(rc.getLocation().x+px, rc.getLocation().y+py);
-				if (rc.canSenseLocation(visitingSpot) && rc.onTheMap(visitingSpot)){
-					answer.add(visitingSpot);
-					rc.setIndicatorDot(visitingSpot, 255, 0, 0);
+		int divisionNum= (int)(180/Math.toDegrees(Math.asin(searchRange*1.0/(2*radius))));
+		if (divisionNum!= 0){
+			double angle= 360/divisionNum;
+			//System.out.println("ANGLE: "+Math.toDegrees(angle));
+			if (angle!= 0){
+				for (int n= 0; n< 360; n+= angle){
+					int px= (int) (radius*Math.cos(Math.toRadians(n)));
+					int py= (int) (radius*Math.sin(Math.toRadians(n)));
+					MapLocation visitingSpot= new MapLocation(rc.getLocation().x+px, rc.getLocation().y+py);
+					if (rc.canSenseLocation(visitingSpot) && rc.onTheMap(visitingSpot)){
+						answer.add(visitingSpot);
+						rc.setIndicatorDot(visitingSpot, 255, 0, 0);
+					}
+					else if (!rc.canSense(visitingSpot)){
+						answer.add(visitingSpot); //For the scout himself to check
+						rc.setIndicatorDot(visitingSpot, 255, 0, 0);
+					}
+					//System.out.println(n);
 				}
-				else if (!rc.canSense(visitingSpot)){
-					answer.add(visitingSpot); //For the scout himself to check
-					rc.setIndicatorDot(visitingSpot, 255, 0, 0);
-				}
-				//System.out.println(n);
 			}
 		}
 		return answer;

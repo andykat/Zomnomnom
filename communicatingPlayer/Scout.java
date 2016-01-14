@@ -14,7 +14,7 @@ public class Scout extends RobotRunner {
 	private int visitingIndex= 0;
 	private Information memory;
 	private int fullness= 0; //Once it exceeds the scout hunger amount, gets reset to zero and move on to next target
-	private int searchLevel= 10;
+	private int searchLevel= 4; //Must be > 1
 	private int roundSearchStart;
 	private int roundSeearchStopped;
 	private int previousRoundTime;
