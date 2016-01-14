@@ -8,14 +8,29 @@ import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
+import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
+import battlecode.common.Team;
 
 public class RobotRunner {
 	protected RobotController rc;
+	protected RobotInfo[] startingArchons;
+	protected Team enemyTeam;
+	protected Team myTeam;
 	protected Random randall;
+	protected MapLocation eden;
+	
 	public RobotRunner(RobotController rcin){
 		this.rc= rcin;
 		randall= new Random();
+		if (rc.getTeam().equals(Team.A)){
+			enemyTeam= Team.B;
+			myTeam= Team.A;
+		}else{
+			enemyTeam= Team.A;
+			myTeam= Team.B;
+		}
+		eden= rc.getInitialArchonLocations(myTeam)[0];
 	}
 	
 	public void run() throws GameActionException{
@@ -51,6 +66,28 @@ public class RobotRunner {
             System.out.println(e.getMessage());
             e.printStackTrace();
         }
+	}
+	
+	
+	public boolean simpleAttack() throws GameActionException{
+		boolean attacked= false;
+	     if (rc.getType().canAttack()) {
+             RobotInfo[] enemiesWithinRange = rc.senseNearbyRobots(rc.getType().attackRadiusSquared, enemyTeam);
+             RobotInfo[] zombiesWithinRange = rc.senseNearbyRobots(rc.getType().attackRadiusSquared, Team.ZOMBIE);
+             if (enemiesWithinRange.length > 0) {
+                 if (rc.isWeaponReady()) {
+                     rc.attackLocation(enemiesWithinRange[randall.nextInt(enemiesWithinRange.length)].location);
+                     attacked= true;
+                 }
+             } else if (zombiesWithinRange.length > 0) {
+                 if (rc.isWeaponReady()) {
+                     rc.attackLocation(zombiesWithinRange[randall.nextInt(zombiesWithinRange.length)].location);
+                     attacked= true;
+                 }
+             }
+         }
+	     
+	     return attacked;
 	}
 	
 	public Direction getSpawnableDir(RobotType rt){
@@ -106,6 +143,13 @@ public class RobotRunner {
 			}
 		}
 		return answer;
+	}
+	
+	public void buildRobot(RobotType rt) throws GameActionException{
+		Direction canBuildDir= getSpawnableDir(rt);
+		if (canBuildDir!= null){
+			rc.build(canBuildDir, rt);
+		}
 	}
 	
 	public MapLocation checkLocation(MapLocation check) throws GameActionException{ //returns null on invalid map

@@ -11,6 +11,8 @@ public class Archon extends RobotRunner {
 	private mode currentMode;
 	private Information memory;
 	private RobotInfo baby;
+	private int numSoldiersToSummon= 5;
+	private int numGaurdsToSummon= 5;
 	
 	public Archon(RobotController rcin) {
 		super(rcin);
@@ -38,7 +40,23 @@ public class Archon extends RobotRunner {
 				
 				break;
 			case WAIT_FOR_BABY:
+				RobotType summon= RobotConstants.posNRobotTypes[randall.nextInt(2)+3];
+				if (summon.equals(RobotType.SOLDIER)){
+					if (numSoldiersToSummon> 0){
+						numSoldiersToSummon--;
+						buildRobot(summon);
+					}
+				}else if (summon.equals(RobotType.GUARD)){
+					if (numGaurdsToSummon> 0){
+						numGaurdsToSummon--;
+						buildRobot(summon);
+					}
+				}
 				
+				if (numGaurdsToSummon<= 0 && numSoldiersToSummon<= 0){
+					bugMove(rc.getLocation(), eden);
+				}
+				break;
 			default:
 				//Move back towards the archon?
 				break;

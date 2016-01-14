@@ -61,7 +61,7 @@ public class Scout extends RobotRunner {
 						
 						//GATHERING INFORMATION====================================
 						
-						RobotInfo[] enemyRobotsInRange = rc.senseNearbyRobots(RobotType.SCOUT.sensorRadiusSquared, Team.ZOMBIE);
+						RobotInfo[] enemyRobotsInRange = rc.senseNearbyRobots(rc.getType().sensorRadiusSquared, Team.ZOMBIE);
 						for (int n= 0; n< enemyRobotsInRange.length; n++){
 							if (enemyRobotsInRange[n].type==RobotType.ZOMBIEDEN){
 								memory.addMapInfo(enemyRobotsInRange[n].location, (int) enemyRobotsInRange[n].health, RobotConstants.mapTypes.ZOMBIE_DEN);	
@@ -78,8 +78,8 @@ public class Scout extends RobotRunner {
 							memory.addMapInfo(partsLoc[n], (int)rc.senseParts(partsLoc[n]),RobotConstants.mapTypes.PARTS);
 						}
 						 
-						for (int x= (int) -Math.sqrt(RobotType.SCOUT.sensorRadiusSquared)+rc.getLocation().x; x< Math.sqrt(RobotType.SCOUT.sensorRadiusSquared)+rc.getLocation().x; x++){
-							for (int y= (int) -Math.sqrt(RobotType.SCOUT.sensorRadiusSquared)+rc.getLocation().y; y< Math.sqrt(RobotType.SCOUT.sensorRadiusSquared)+rc.getLocation().y; y++){
+						for (int x= (int) -Math.sqrt(rc.getType().sensorRadiusSquared)+rc.getLocation().x; x< Math.sqrt(rc.getType().sensorRadiusSquared)+rc.getLocation().x; x++){
+							for (int y= (int) -Math.sqrt(rc.getType().sensorRadiusSquared)+rc.getLocation().y; y< Math.sqrt(rc.getType().sensorRadiusSquared)+rc.getLocation().y; y++){
 								MapLocation underView= new MapLocation(x,y);
 								if (checkLocation(underView)!= null){
 									int rubbles= (int) rc.senseRubble(underView);
@@ -105,7 +105,7 @@ public class Scout extends RobotRunner {
 							targetAttraction= visitingList.get(visitingIndex);
 						}
 						
-						if (fullness > Math.sqrt(RobotType.SCOUT.sensorRadiusSquared)){ //After you search for a while, sometimes it is better to be content #LIFELESSON
+						if (fullness > Math.sqrt(rc.getType().sensorRadiusSquared)){ //After you search for a while, sometimes it is better to be content #LIFELESSON
 							fullness= 0;
 							visitingList.set(visitingIndex, rc.getLocation());
 							targetAttraction= rc.getLocation();
@@ -142,7 +142,9 @@ public class Scout extends RobotRunner {
 				}else{
 					previousRoundTime= testRoundNum;
 					roundSearchStart= rc.getRoundNum();
-					currentMode= mode.SEARCH;
+					if (rc.canSenseRobot(mom.ID)){
+						currentMode= mode.SEARCH;
+					}
 				}
 				break;
 			default:

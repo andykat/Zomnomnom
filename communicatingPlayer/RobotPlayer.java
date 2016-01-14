@@ -8,11 +8,17 @@ public class RobotPlayer implements RobotConstants{
 	
 	public static void run(RobotController rcin) throws GameActionException{
 		rc= rcin;
+		
 		if (rc.getType().equals(RobotType.ARCHON)){
 			rr= new Archon(rc);
-		}
-		if (rc.getType().equals(RobotType.SCOUT)){
+		}else if (rc.getType().equals(RobotType.SCOUT)){
 			rr= new Scout(rc);
+		}else if (rc.getType().equals(RobotType.GUARD)){
+			rr= new Gaurd(rc);
+		}else if (rc.getType().equals(RobotType.SOLDIER)){
+			rr= new Soldier(rc);
+		}else{
+			rr= new RobotRunner(rc); //In case some one fucks up
 		}
 		
 		while(true){ //Will get destroyed if it ends
