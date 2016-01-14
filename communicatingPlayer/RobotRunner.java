@@ -1,9 +1,11 @@
 package communicatingPlayer;
 
+import java.util.ArrayList;
 import java.util.Random;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 
 public class RobotRunner {
@@ -28,6 +30,33 @@ public class RobotRunner {
 	
 	public void avoidEnemyMove(){
 		//TODO move and alternate course based on enemy repulsion
+	}
+	
+	public ArrayList<MapLocation> createDividedRadius(int searchRange, int radius) throws GameActionException{
+		ArrayList<MapLocation> answer= new ArrayList<MapLocation>();
+		double angle= 360/(int)(180/Math.toDegrees(Math.asin(searchRange*1.0/(2*radius))));
+		//System.out.println("ANGLE: "+Math.toDegrees(angle));
+		if (angle!= 0){
+			for (int n= 0; n< 360; n+= angle){
+				int px= (int) (radius*Math.cos(Math.toRadians(n)));
+				int py= (int) (radius*Math.sin(Math.toRadians(n)));
+				MapLocation visitingSpot= new MapLocation(rc.getLocation().x+px, rc.getLocation().y+py);
+				if (rc.canSenseLocation(visitingSpot) && rc.onTheMap(visitingSpot)){
+					answer.add(visitingSpot);
+					rc.setIndicatorDot(visitingSpot, 255, 0, 0);
+				}
+				else if (!rc.canSense(visitingSpot)){
+					answer.add(visitingSpot); //For the scout himself to check
+					rc.setIndicatorDot(visitingSpot, 255, 0, 0);
+				}
+				System.out.println(n);
+			}
+		}
+		return answer;
+	}
+	
+	public ArrayList<MapLocation> cleanLocationList(ArrayList<MapLocation> visitingList){
+		return null;
 	}
 	
 	public void simpleMove(Direction dirToMove) throws GameActionException{
