@@ -7,8 +7,6 @@ import java.util.Random;
 import java.util.function.Function;
 
 public class RobotPlayer {
-	int destx = 130;
-	int desty = 230;
 	
     /**
      * run() is the method that is called when a robot is instantiated in the Battlecode world.
@@ -22,12 +20,16 @@ public class RobotPlayer {
         RobotType[] robotTypes = {RobotType.SCOUT, RobotType.SOLDIER, RobotType.SOLDIER, RobotType.SOLDIER,
                 RobotType.GUARD, RobotType.GUARD, RobotType.VIPER, RobotType.TURRET};
         Random rand = new Random(rc.getID());
+        ////////////////////////////////////
+        //Msg Type Range set
+        ////////////////////////////////////
         int[][] ranges0 = {{4,50,100,50,100},
 				   {0}
 				  };
 		int[][] ranges1 = {{4,4,4,50,100,50,100},
 				   {0}
 				  };
+		
 		int[] ranges0Product = new int[ranges0.length];
 		int[] ranges1Product = new int[ranges1.length];
 		for(int i=0;i<ranges0.length;i++){
@@ -49,12 +51,7 @@ public class RobotPlayer {
         int[] signalInts = new int[2];
         if (rc.getType() == RobotType.ARCHON) {
         	try {
-        		///////////////////////////
-        		// Preparing the signals to send
-        		/////////////////////////
-        		/*int[] list0 = {1,45,97,12,12};
-                int[] list1 = {2,3,2,11,11,11,11};*/
-                //signalInts = hashMessage.apply(hashMessagePrep(0,list0,list1));
+
                 
         	} catch (Exception e) {
 
@@ -67,14 +64,14 @@ public class RobotPlayer {
                 	if(rc.isCoreReady()){
                 		Signal[] signals = rc.emptySignalQueue();
                 		if(rc.getMessageSignalCount()==0){
-                			/*int[] list0 = {1,45,97,12,12};
-                            int[] list1 = {2,3,2,11,11,11,11};
-                            signalInts = hashMessage.apply(hashMessagePrep(0,list0,list1));*/
-                			int[] list0 = {1,45,97,12,12};
-                            int[] list1 = {2,3,2,11,11,11,11};
+                			///////////////////////////
+                        	// Preparing the signals to send
+                        	/////////////////////////
+                			int[] list0 = {1,45,97,12,12}; //must be less than 28 bits
+                            int[] list1 = {2,3,2,11,11,11,11}; // must be less than 32 bits
                             int messageType = 0;
                             signalInts = hashMessage(messageType, list0, list1, ranges0[messageType], ranges1[messageType]);
-                			rc.broadcastMessageSignal(signalInts[0],signalInts[1] , RobotType.SCOUT.sensorRadiusSquared);
+                			rc.broadcastMessageSignal(signalInts[0],signalInts[1] , RobotType.SCOUT.sensorRadiusSquared*2);
                 		}
                         if (rc.hasBuildRequirements(RobotType.SCOUT)) {
                             // Choose a random direction to try to build in
@@ -91,9 +88,6 @@ public class RobotPlayer {
                             }
                         }
                 	}
-                	///////////////////////////
-                	// Preparing the signals to send
-                	/////////////////////////
                 	Clock.yield();
                 }
             } catch (Exception e) {
