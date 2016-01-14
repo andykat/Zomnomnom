@@ -2,11 +2,13 @@ package communicatingPlayer;
 
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
+import battlecode.common.RobotType;
 
 public class RobotRunner {
 	protected RobotController rc;
@@ -19,14 +21,59 @@ public class RobotRunner {
 	public void run() throws GameActionException{
 		//System.out.println("Override this~~");
 	}
-	public static Direction[] nextBestRight(Direction bestDir){
-		Direction[] runnerup= {bestDir.rotateLeft(), bestDir.rotateLeft(),bestDir.rotateRight().rotateRight(), bestDir.rotateLeft().rotateLeft()};
-		return runnerup;
+	
+	public void bugMove(MapLocation start, MapLocation end){
+		try {
+			Direction dir = start.directionTo(end);
+			int c=0;
+			while(!rc.canMove(dir))
+			{
+				dir = dir.rotateRight();
+				if(c>7){
+					break;
+				}
+				c++;
+			}
+			if(c<8){
+				if(rc.isCoreReady()){
+					rc.move(dir);
+				}
+			}
+			else{
+				if(rc.isCoreReady()){
+					rc.clearRubble(dir);
+				}
+			}
+		} catch (Exception e) {
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
 	}
-	public static Direction[] nextBestLeft(Direction bestDir){
-		Direction[] runnerup= {bestDir.rotateLeft(),bestDir.rotateLeft(), bestDir.rotateLeft().rotateLeft(), bestDir.rotateRight().rotateRight()};
-		return runnerup;
+	
+	public Direction getSpawnableDir(RobotType rt){
+		Direction[] alldirs= Direction.values();
+		Direction answer= null;
+		shuffleDirArray(alldirs);
+		for (int n= 0; n< alldirs.length; n++){
+			if (rc.canBuild(alldirs[n], rt)){
+				answer= alldirs[n];
+				break;
+			}
+		}
+		return answer;
 	}
+	
+	public void shuffleDirArray(Direction[] ar)
+	  {
+	    for (int i = ar.length - 1; i > 0; i--)
+	    {
+	      int index = randall.nextInt(i + 1);
+	      // Simple swap
+	      Direction a = ar[index];
+	      ar[index] = ar[i];
+	      ar[i] = a;
+	    }
+	  }
 	
 	public void avoidEnemyMove(){
 		//TODO move and alternate course based on enemy repulsion
@@ -87,5 +134,13 @@ public class RobotRunner {
 		}else{
 			System.out.println("rc is null");
 		}
+	}
+	public static Direction[] nextBestRight(Direction bestDir){
+		Direction[] runnerup= {bestDir.rotateLeft(), bestDir.rotateLeft(),bestDir.rotateRight().rotateRight(), bestDir.rotateLeft().rotateLeft()};
+		return runnerup;
+	}
+	public static Direction[] nextBestLeft(Direction bestDir){
+		Direction[] runnerup= {bestDir.rotateLeft(),bestDir.rotateLeft(), bestDir.rotateLeft().rotateLeft(), bestDir.rotateRight().rotateRight()};
+		return runnerup;
 	}
 }

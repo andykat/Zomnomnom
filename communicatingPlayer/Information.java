@@ -11,11 +11,16 @@ import java.util.Queue;
 
 //MAP ITERATION: http://stackoverflow.com/questions/46898/how-to-efficiently-iterate-over-each-entry-in-a-map
 //20 message signals max per turn
+//Map location -16000 to 16000; 0~ 
+
+
+//getInitialArchonLocations().get(0) for seed point, locations sent as difference to that starting value
+
 
 public class Information {
-	private Map<MapLocation,int[]> map = new HashMap<MapLocation,int[]>();
+	private Map<MapLocation,int[]> map = new HashMap<MapLocation,int[]>(); 
 		//int[rubbleCount,PartsCount,DenHealth,NeutralCharacterType]
-	private Queue downloadQueue= new LinkedList<int[]>();
+	private Queue<int[]> downloadQueue= new LinkedList<int[]>();
 	
 	public int getRobotIntType(RobotType rt){
 		int answer= -1;

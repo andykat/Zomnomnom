@@ -22,8 +22,9 @@ public class Archon extends RobotRunner {
 		if (rc.isCoreReady()){
 			switch (currentMode){
 			case MAKE_SBABY:
-				if (rc.canBuild(Direction.NORTH, RobotType.SCOUT)){
-					rc.build(Direction.NORTH, RobotType.SCOUT);
+				Direction canBuildDir= getSpawnableDir(RobotType.SCOUT);
+				if (canBuildDir!= null){
+					rc.build(canBuildDir, RobotType.SCOUT);
 					RobotInfo[] potentialBabies= rc.senseNearbyRobots(1);
 					for (int n= 0; n< potentialBabies.length; n++){
 						if (potentialBabies[n].type.equals(RobotType.SCOUT)){
@@ -34,6 +35,7 @@ public class Archon extends RobotRunner {
 						}
 					}
 				}
+				
 				break;
 			case WAIT_FOR_BABY:
 				

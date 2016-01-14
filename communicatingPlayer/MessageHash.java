@@ -15,7 +15,7 @@ package communicatingPlayer;
  * 
  */
 public class MessageHash{
-	private int[][] mranges0 = {{4,50,100,50,100},
+	private int[][] mranges0 = {{1000,1000,100,50,100}, 
 			   {2,2,2},
 			   {12,12,12}
 			  };

@@ -9,11 +9,12 @@ public class Scout extends RobotRunner {
 	private ArrayList<MapLocation> visitingList;
 	private MapLocation targetAttraction;
 	private MapLocation homeBase;
-	private enum mode{LOOK_FOR_MOM,GO_TO_MOM,PATROL,SEARCH,TALK_TO_MOM};
+	private enum mode{GET_SEED, LOOK_FOR_MOM,GO_TO_MOM,PATROL,SEARCH,TALK_TO_MOM};
 	private mode currentMode;
 	private int visitingIndex= 0;
 	private boolean needToCheckOnMap= true;
 	private Information memory;
+	private int fullness= 0; //Once it exceeds the scout hunger amount, gets reset to zero and move on to next target
 	
 	public Scout(RobotController rcin) throws GameActionException {
 		super(rcin);
@@ -85,15 +86,23 @@ public class Scout extends RobotRunner {
 							 }
 						 }
 					}else{ //if you are not yet on the destination
-						simpleMove(rc.getLocation().directionTo(targetAttraction));
-						if (needToCheckOnMap){
+						//simpleMove(rc.getLocation().directionTo(targetAttraction));
+						bugMove(rc.getLocation(), targetAttraction);
+						fullness+= 1;
+						
+						if (needToCheckOnMap){ //unecessary unless you want to patrol, but for LATER
 							MapLocation testLocation= checkLocation(targetAttraction);
-							if (testLocation== null){ //If the location is not on the map
+							if (testLocation== null){ //If the location is not on the map or times up
 								visitingList.remove(targetAttraction);
 								if (visitingIndex > visitingList.size()-1){
 									visitingIndex= visitingList.size()-1;
 								}
+						
 								targetAttraction= visitingList.get(visitingIndex);
+							}else if (fullness > RobotConstants.SCOUT_HUNGER){ //After you search for a while, sometimes it is better to be content #LIFELESSON
+								fullness= 0;
+								visitingList.set(visitingIndex, rc.getLocation());
+								targetAttraction= rc.getLocation();
 							}
 						}
 					}
@@ -102,7 +111,10 @@ public class Scout extends RobotRunner {
 				}
 				break;
 			case GO_TO_MOM:
-				simpleMove(rc.getLocation().directionTo(homeBase));
+				//simpleMove(rc.getLocation().directionTo(homeBase));
+				
+				bugMove(rc.getLocation(),homeBase);
+				
 				if (rc.getLocation().distanceSquaredTo(homeBase)<= 0){ //Go whisper into the archon's ears
 					//memory.printInfo();
 					System.out.println(rc.getRoundNum()+ ": completed with " + memory.getBrainSize());
