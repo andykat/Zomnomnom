@@ -6,12 +6,12 @@ public class RobotPlayer implements RobotConstants{
 	static RobotController rc;
 	private static RobotRunner rr;
 	
-	public static void run(RobotController rcin){
+	public static void run(RobotController rcin) throws GameActionException{
 		rc= rcin;
 		if (rc.getType().equals(RobotType.ARCHON)){
 			rr= new Archon(rc);
 		}
-		if (rc.getType()== RobotType.SCOUT){
+		if (rc.getType().equals(RobotType.SCOUT)){
 			rr= new Scout(rc);
 		}
 		

@@ -2,38 +2,24 @@ package communicatingPlayer;
 
 import battlecode.common.*;
 
-import java.util.PriorityQueue;
+import java.util.ArrayList;
 
 public class Scout extends RobotRunner {
-	static OriginMapLocComparator mcomp;
-	static PriorityQueue<MapLocation> visitingList;
-	static MapLocation targetAttraction;
-	static MapLocation homeBase;
-	static enum mode{HOME,SEARCHXY,SEARCH,ZOMLEAD,ZOMBIELOVE,READY};
-	static mode currentMode;
-	private int xMax= -1;
-	private int yMax= -1;
+	private ArrayList<MapLocation> visitingList;
+	private MapLocation targetAttraction;
+	private MapLocation homeBase;
+	static enum mode{HOME,PATROL,SEARCH,READY};
+	private mode currentMode;
+	private int visitingIndex= 0;
+	private boolean needToCheckOnMap= true;
 	
-	public Scout(RobotController rcin) {
+	public Scout(RobotController rcin) throws GameActionException {
 		super(rcin);
-		mcomp= new OriginMapLocComparator(rc.getLocation()); //Closer to target the better
-		visitingList= new PriorityQueue<MapLocation>(10, mcomp);
-		createDividedGrid(RobotConstants.SCOUT_SEARCH_RANGE);
+		//mcomp= new OriginMapLocComparator(rc.getLocation()); //Closer to target the better
+		visitingList= new ArrayList<MapLocation>();
+		visitingList= createDividedRadius(RobotConstants.SCOUT_SEARCH_RANGE,10);
 		currentMode= mode.SEARCH;
 		homeBase= rc.getLocation();
-	}
-
-	public static void createDividedGrid(int searchRange){ //421,173?
-		//http://stackoverflow.com/questions/683041/java-how-do-i-use-a-priorityqueue
-		int xStart= 421;
-		int yStart= 144;
-		
-		for (int x= xStart; x< xStart+ GameConstants.MAP_MIN_WIDTH; x+= searchRange){
-			for (int y= yStart; y< yStart+ GameConstants.MAP_MIN_HEIGHT; y+= searchRange){
-				//visitingList.add(new MapLocation(x,y));
-				visitingList.add(new MapLocation(x,y));
-			}
-		}
 	}
 	
 	public void run() throws GameActionException{ //Scout gathers information, shares location with Archon, they go grab it
@@ -41,13 +27,29 @@ public class Scout extends RobotRunner {
 			switch (currentMode){
 			case SEARCH:
 				if (targetAttraction== null && visitingList.size()> 0){ //If you currently aren't going any where and you want to go somewhere
-					targetAttraction= visitingList.poll();
+					targetAttraction= visitingList.get(visitingIndex);
 				}else if (targetAttraction!= null){ //If you want to go somewhere
-					//System.out.println(targetAttraction.toString());
-					if (rc.getLocation().equals(targetAttraction)){//If you are at the same place
-						targetAttraction= visitingList.poll();
+					//System.out.println("Going somewhere" + visitingIndex);
+					if (rc.getLocation().equals(targetAttraction)){//If you are at the same place, set next destination
+						visitingIndex+= 1;
+						if (visitingIndex > visitingList.size()-1){ //Loopback
+							visitingIndex= 0;
+							needToCheckOnMap= false;
+						}
+						targetAttraction= visitingList.get(visitingIndex);
 					}else{
 						simpleMove(rc.getLocation().directionTo(targetAttraction));
+						if (needToCheckOnMap){
+							if (rc.canSenseLocation(targetAttraction)){ 
+								if (rc.onTheMap(targetAttraction)== false){//Check if the place you want to go is on the map
+									visitingList.remove(targetAttraction); //If it isn't remove it
+									if (visitingIndex > visitingList.size()-1){
+										visitingIndex= visitingList.size()-1;
+									}
+									targetAttraction= visitingList.get(visitingIndex);
+								}
+							}
+						}
 					}
 				}else{
 					currentMode= mode.HOME; //Maybe defending? 
@@ -57,13 +59,6 @@ public class Scout extends RobotRunner {
 				simpleMove(rc.getLocation().directionTo(homeBase));
 				if (rc.canSense(homeBase))
 					currentMode= mode.READY;
-				break;
-			case SEARCHXY:
-				if (xMax!= -1 && yMax!= -1){
-					currentMode= mode.READY;
-				}else{
-					
-				}
 				break;
 			default:
 				//Move back towards the archon?
