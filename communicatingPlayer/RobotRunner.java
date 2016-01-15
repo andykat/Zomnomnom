@@ -19,6 +19,8 @@ public class RobotRunner {
 	protected Team myTeam;
 	protected Random randall;
 	protected MapLocation eden;
+	protected Information memory;
+	protected int robotSenseRadius;
 	
 	public RobotRunner(RobotController rcin){
 		this.rc= rcin;
@@ -31,6 +33,8 @@ public class RobotRunner {
 			myTeam= Team.B;
 		}
 		eden= rc.getInitialArchonLocations(myTeam)[0];
+		memory= new Information(); //Everybody has a brain
+		robotSenseRadius= (int) Math.sqrt(rc.getType().sensorRadiusSquared);
 	}
 	
 	public void run() throws GameActionException{
@@ -57,8 +61,6 @@ public class RobotRunner {
 			else{
 				if(rc.isCoreReady()){
 					if (rc.canSense(rc.getLocation().add(dir)) && rc.onTheMap(rc.getLocation().add(dir))){
-						if (rc.senseRubble(rc.getLocation().add(dir)) > 0)
-							rc.clearRubble(dir);
 					}
 				}
 			}
@@ -90,15 +92,57 @@ public class RobotRunner {
 	     return attacked;
 	}
 	
-	public void truncateVisitingList(ArrayList<MapLocation> visitingList, int minX, int minY, int maxX, int maxY){
+	public void temperingVisitingList(ArrayList<MapLocation> visitingList, int minX, int minY, int maxX, int maxY){ //make sure to temper to bound- radius!
+		ArrayList<MapLocation> toDelete= new ArrayList<MapLocation>();
+		//boolean skip= false; //Just dlete every other
+		rc.setIndicatorString(1, "tempering");
+		
+		int corruption= 0;
+		MapLocation corruptedPlace= new MapLocation(Integer.MIN_VALUE, Integer.MIN_VALUE);
+		
 		for (int n= 0; n< visitingList.size(); n++){
 			MapLocation check= visitingList.get(n);
+//			minX= minX + robotSenseRadius-2;
+//			minY= minY + robotSenseRadius-2;
+//			maxX= maxX - robotSenseRadius+2;
+//			maxY= maxY - robotSenseRadius+2;
+			
 			int x= clamp(check.x,minX,maxX);
 			int y= clamp(check.y,minY,maxY);
-			MapLocation clampedValue= new MapLocation(x,y); //Some way to trim such that the distance between sensing points don't overlap too much
 			
+			MapLocation clampedValue= new MapLocation(x,y); //Some way to trim such that the distance between sensing points don't overlap too much
 			visitingList.set(n, clampedValue);
+			
+			//clamping
+			boolean atCorner= false; //Annoying as fk case
+			MapLocation[] corners= {new MapLocation(minX,minY), new MapLocation(minX,maxY), new MapLocation(maxX, minY), new MapLocation(maxX,maxY)};
+			for (int m= 0; m < corners.length; m++){
+				if (clampedValue.equals(corners)){
+					atCorner= true;
+					break;
+				}
+			}
+			
+			if (n> 0 && visitingList.get(n-1).distanceSquaredTo(clampedValue) > rc.getType().sensorRadiusSquared/2 && !atCorner) //Humble thoughts
+				visitingList.set(n, clampedValue);
+			else{
+				visitingList.set(n, corruptedPlace);
+				corruption++;
+			}
+			
+//			if (check.x < minX || check.x > maxX || check.y < minY || check.x > maxY){ //Humble thoughts
+//				visitingList.set(n, corruptedPlace);
+//				corruption++;
+//			}else{
+//				visitingList.set(n, clampedValue);
+//			}
 		}
+		
+		for (int n= 0; n< corruption; n++){
+			visitingList.remove(corruptedPlace);
+		}
+		
+		rc.setIndicatorString(1,"");
 	}
 	
 	public static int clamp(int val, int min, int max) {
@@ -144,16 +188,7 @@ public class RobotRunner {
 				for (int n= 0; n< 360; n+= angle){
 					int px= (int) (radius*Math.cos(Math.toRadians(n)));
 					int py= (int) (radius*Math.sin(Math.toRadians(n)));
-					MapLocation visitingSpot= new MapLocation(rc.getLocation().x+px, rc.getLocation().y+py);
-					if (rc.canSenseLocation(visitingSpot) && rc.onTheMap(visitingSpot)){
-						answer.add(visitingSpot);
-						rc.setIndicatorDot(visitingSpot, 255, 0, 0);
-					}
-					else if (!rc.canSense(visitingSpot)){
-						answer.add(visitingSpot); //For the scout himself to check
-						rc.setIndicatorDot(visitingSpot, 255, 0, 0);
-					}
-					//System.out.println(n);
+					answer.add(new MapLocation(rc.getLocation().x+px, rc.getLocation().y+py));
 				}
 			}
 		}
@@ -165,47 +200,5 @@ public class RobotRunner {
 		if (canBuildDir!= null){
 			rc.build(canBuildDir, rt);
 		}
-	}
-	
-	public MapLocation checkLocation(MapLocation check) throws GameActionException{ //returns null on invalid map
-		MapLocation answer= check;
-		if (rc.canSense(check)){
-			if (rc.onTheMap(check)== false){
-				answer= null;
-			}
-		}
-		return answer;
-	}
-	
-	public void simpleMove(Direction dirToMove) throws GameActionException{
-		if (rc!= null){
-			if (rc.isCoreReady()){
-				if (rc.canMove(dirToMove)){
-					rc.move(dirToMove);
-				}else{
-					Direction[] nextMoves;
-					if (randall.nextInt(2)== 0)
-						nextMoves= nextBestRight(dirToMove);
-					else
-						nextMoves= nextBestLeft(dirToMove);
-					for (int n= 0; n< nextMoves.length; n++){
-						if (rc.canMove(nextMoves[n])){
-							rc.move(nextMoves[n]);
-							break;
-						}
-					}
-				}
-			}
-		}else{
-			System.out.println("rc is null");
-		}
-	}
-	public static Direction[] nextBestRight(Direction bestDir){
-		Direction[] runnerup= {bestDir.rotateLeft(), bestDir.rotateLeft(),bestDir.rotateRight().rotateRight(), bestDir.rotateLeft().rotateLeft()};
-		return runnerup;
-	}
-	public static Direction[] nextBestLeft(Direction bestDir){
-		Direction[] runnerup= {bestDir.rotateLeft(),bestDir.rotateLeft(), bestDir.rotateLeft().rotateLeft(), bestDir.rotateRight().rotateRight()};
-		return runnerup;
 	}
 }

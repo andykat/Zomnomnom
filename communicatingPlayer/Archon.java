@@ -31,7 +31,7 @@ public class Archon extends RobotRunner {
 					for (int n= 0; n< potentialBabies.length; n++){
 						if (potentialBabies[n].type.equals(RobotType.SCOUT)){
 							baby= potentialBabies[n];
-							System.out.println("FOUND BABY!");
+							//System.out.println("FOUND BABY!");
 							currentMode= mode.WAIT_FOR_BABY;
 							break;
 						}

@@ -50,13 +50,9 @@ public class Information {
 		 return answer;
 	}
 	
-	public int[] getCorners(){ //Return null if quest incomplete
-		if (getNumRecordedCorners()==4){
-			int[] answer= {minX,minY,maxX,maxY};
-			return answer;
-		}else{
-			return null;
-		}
+	public int[] getCorners(){ //Can return even though the corners have yet to be found
+		int[] answer= {minX,minY,maxX,maxY};
+		return answer;
 	}
 	
 	public void addCornerValueCandidate(Direction dir, MapLocation loc){
