@@ -90,6 +90,21 @@ public class RobotRunner {
 	     return attacked;
 	}
 	
+	public void truncateVisitingList(ArrayList<MapLocation> visitingList, int minX, int minY, int maxX, int maxY){
+		for (int n= 0; n< visitingList.size(); n++){
+			MapLocation check= visitingList.get(n);
+			int x= clamp(check.x,minX,maxX);
+			int y= clamp(check.y,minY,maxY);
+			MapLocation clampedValue= new MapLocation(x,y); //Some way to trim such that the distance between sensing points don't overlap too much
+			
+			visitingList.set(n, clampedValue);
+		}
+	}
+	
+	public static int clamp(int val, int min, int max) {
+	    return Math.max(min, Math.min(max, val));
+	}
+	
 	public Direction getSpawnableDir(RobotType rt){
 		Direction[] alldirs= Direction.values();
 		Direction answer= null;

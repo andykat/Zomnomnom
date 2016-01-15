@@ -18,6 +18,7 @@ public class Scout extends RobotRunner {
 	private int roundSearchStart;
 	private int roundSeearchStopped;
 	private int previousRoundTime;
+	private boolean travelTruncated= false; //Whether the map has been tempered by the world edges
 	
 	public Scout(RobotController rcin) throws GameActionException {
 		super(rcin);
@@ -86,6 +87,21 @@ public class Scout extends RobotRunner {
 									//System.out.println("rubble: "+parts);
 									if (rubbles> 0){
 										memory.addMapInfo(underView, rubbles,RobotConstants.mapTypes.RUBBLE);
+									}else{
+									}
+								}else{//if out of range or out of map
+									System.out.println("Num recoreded edges: "+ memory.getNumRecordedCorners());
+									if (memory.getNumRecordedCorners()< 4){
+										if (rc.canSense(underView) && !rc.onTheMap(underView)){//if you can sense it and it is out of the map, becomes candidate for max min edge value check
+											Direction edgeDir= rc.getLocation().directionTo(underView);							 
+											memory.addCornerValueCandidate(edgeDir, underView);
+										}
+									}else{
+										//You got all edges!
+										if (!travelTruncated){ //If the visiting list has not yet been fixed by the world edges
+											int[] corners= memory.getCorners();
+											truncateVisitingList(visitingList, corners[0],corners[1],corners[2],corners[3]);
+										}
 									}
 								}
 							 }
@@ -105,7 +121,7 @@ public class Scout extends RobotRunner {
 							targetAttraction= visitingList.get(visitingIndex);
 						}
 						
-						if (fullness > Math.sqrt(rc.getType().sensorRadiusSquared)){ //After you search for a while, sometimes it is better to be content #LIFELESSON
+						if (fullness > Math.sqrt(rc.getType().sensorRadiusSquared)){ //After you search for a while, sometimes it is better to be content with where you are #LIFELESSON
 							fullness= 0;
 							visitingList.set(visitingIndex, rc.getLocation());
 							targetAttraction= rc.getLocation();
@@ -130,6 +146,7 @@ public class Scout extends RobotRunner {
 				//When you're done
 				targetAttraction= null;
 				visitingList.clear();
+				travelTruncated= false;
 				searchLevel+= RobotConstants.SCOUT_SEARCH_RANGE*2;
 				visitingList= createDividedRadius(RobotConstants.SCOUT_SEARCH_RANGE,searchLevel);
 				

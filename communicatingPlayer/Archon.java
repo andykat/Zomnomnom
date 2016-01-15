@@ -7,7 +7,7 @@ import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 
 public class Archon extends RobotRunner {
-	private enum mode{MAKE_SBABY,WAIT_FOR_BABY};
+	private enum mode{MAKE_SBABY,WAIT_FOR_BABY,RUN_TO_ENEMY};
 	private mode currentMode;
 	private Information memory;
 	private RobotInfo baby;
@@ -40,22 +40,22 @@ public class Archon extends RobotRunner {
 				
 				break;
 			case WAIT_FOR_BABY:
-				RobotType summon= RobotConstants.posNRobotTypes[randall.nextInt(2)+3];
-				if (summon.equals(RobotType.SOLDIER)){
-					if (numSoldiersToSummon> 0){
-						numSoldiersToSummon--;
-						buildRobot(summon);
-					}
-				}else if (summon.equals(RobotType.GUARD)){
-					if (numGaurdsToSummon> 0){
-						numGaurdsToSummon--;
-						buildRobot(summon);
-					}
-				}
-				
-				if (numGaurdsToSummon<= 0 && numSoldiersToSummon<= 0){
-					bugMove(rc.getLocation(), eden);
-				}
+//				RobotType summon= RobotConstants.posNRobotTypes[randall.nextInt(2)+3];
+//				if (summon.equals(RobotType.SOLDIER)){
+//					if (numSoldiersToSummon> 0){
+//						numSoldiersToSummon--;
+//						buildRobot(summon);
+//					}
+//				}else if (summon.equals(RobotType.GUARD)){
+//					if (numGaurdsToSummon> 0){
+//						numGaurdsToSummon--;
+//						buildRobot(summon);
+//					}
+//				}
+//				
+//				if (numGaurdsToSummon<= 0 && numSoldiersToSummon<= 0){
+//					bugMove(rc.getLocation(), eden);
+//				}
 				break;
 			default:
 				//Move back towards the archon?
