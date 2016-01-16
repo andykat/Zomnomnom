@@ -23,8 +23,6 @@ public class Information {
 	private int minY= Integer.MIN_VALUE;
 	private int maxX= Integer.MAX_VALUE;
 	private int maxY= Integer.MAX_VALUE;
-	private int[] edgeCheckY= {-1,-1,0,1,1,1,0,-1};
-	private int[] edgeCheckX= {0,1,1,1,0,-1,-1,-1};
 	
 	private Map<MapLocation,int[]> map = new HashMap<MapLocation,int[]>(); 
 		//int[rubbleCount,PartsCount,DenHealth,NeutralCharacterType]
@@ -55,57 +53,19 @@ public class Information {
 		return answer;
 	}
 	
-	public void addCornerValueCandidate(Direction dir, MapLocation loc){
-		for (int n= 0; n< RobotConstants.directions.length; n++){
-			if (RobotConstants.directions[n].equals(dir)){
-				int testX= loc.x + edgeCheckX[n];
-				int testY= loc.y + edgeCheckY[n];
-				if (n== 0){
-					if (minY < testY){
-						minY= testY;
-					}
-				}else if (n== 1){
-					if (minY < testY){
-						minY= testY;
-					}
-					if (maxX > testX){
-						maxX= testX;
-					}
-				}else if (n== 2){
-					if (maxX > testX){
-						maxX= testX;
-					}
-				}else if (n== 3){
-					if (maxY > testY){
-						maxY= testY;
-					}
-					if (maxX > testX){
-						maxX= testX;
-					}
-				}else if (n== 4){
-					if (maxY > testY){
-						maxY= testY;
-					}
-				}else if (n== 5){
-					if (maxY > testY){
-						maxY= testY;
-					}
-					if (minX < testX){
-						maxX= testX;
-					}
-				}else if (n== 6){
-					if (minX < testX){
-						minX= testX;
-					}
-				}else if (n== 7){
-					if (minY < testY){
-						minY= testY;
-					}
-					if (minX < testX){
-						minX= testX;
-					}
-				}
-			}
+	public void addCornerValueCandidate(Direction dir, MapLocation loc){ //You add the direction of your check and the corresponding map location when the map first comes on grid
+		if (dir.equals(Direction.NORTH)){
+			if (loc.y > minY)
+				minY= loc.y;
+		}else if (dir.equals(Direction.EAST)){
+			if (loc.x < maxX)
+				maxX= loc.x;
+		}else if (dir.equals(Direction.SOUTH)){
+			if (loc.y < maxY)
+				maxY= loc.y;
+		}else if (dir.equals(Direction.WEST)){
+			if (loc.x > minX)
+				minX= loc.x;
 		}
 	}
 	

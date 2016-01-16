@@ -8,13 +8,12 @@ public class RobotPlayer implements RobotConstants{
 	
 	public static void run(RobotController rcin) throws GameActionException{
 		rc= rcin;
-		
 		if (rc.getType().equals(RobotType.ARCHON)){
 			rr= new Archon(rc);
 		}else if (rc.getType().equals(RobotType.SCOUT)){
 			rr= new Scout(rc);
 		}else if (rc.getType().equals(RobotType.GUARD)){
-			rr= new Gaurd(rc);
+			rr= new Guard(rc);
 		}else if (rc.getType().equals(RobotType.SOLDIER)){
 			rr= new Soldier(rc);
 		}else{
@@ -28,6 +27,7 @@ public class RobotPlayer implements RobotConstants{
 			} catch (GameActionException e) {
 				e.printStackTrace();
 			}
+			Clock.yield();
 		}
 	}
 }
