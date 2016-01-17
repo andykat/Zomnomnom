@@ -50,7 +50,7 @@ public class Scout extends RobotRunner {
 			}
 			if (currentMode== mode.SET_UP_SEARCH){
 				//debugPrint();
-				System.out.println("\tbrain size: "+memory.getBrainSize());
+				System.out.println("\t" + rc.getRoundNum()+":  brain size: "+memory.getBrainSize());
 				visitingIndex= 0;
 				visitingList= createDividedSquareNodes(searchLevel);
 				System.out.println("\t"+visitingList.size());

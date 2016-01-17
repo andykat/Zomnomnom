@@ -113,10 +113,15 @@ public class RobotRunner {
 			answer.add(rc.getLocation()); //zero range is yourself
 		}else{
 			int additive= 2* ((int) (robotSenseRadius * Math.sqrt(2)) -1);
+			MapLocation prevPt = new MapLocation(Integer.MIN_VALUE, Integer.MIN_VALUE);
 			for (int x = -searchRange; x<= searchRange; x+= additive){
 				for (int y= -searchRange; y<= searchRange; y+= additive){
 					if (x== -searchRange || y== -searchRange || x+additive>= searchRange || y+additive >= searchRange){
-						answer.add(temperLocation(rc.getLocation().add(x,y)));
+						MapLocation test= temperLocation(rc.getLocation().add(x,y));
+						if (test.distanceSquaredTo(prevPt) >= rc.getType().sensorRadiusSquared && !answer.contains(rc.getLocation().add(x,y))){ //Only add points if it is further than half away?
+							answer.add(rc.getLocation().add(x,y));
+							prevPt= temperLocation(rc.getLocation().add(x,y));
+						}
 					}
 				}
 			}
@@ -144,6 +149,10 @@ public class RobotRunner {
 			}
 			
 		});
+		
+		for (int n= 0; n< answer.size(); n++){ //This way the direction comparator works properly
+			answer.set(n, temperLocation(answer.get(n)));
+		}
 		
 		//Sort the answers
 		
@@ -174,11 +183,11 @@ public class RobotRunner {
 		}
 	}
 	
-	protected void temperMapLocList(ArrayList<MapLocation> mapLocList){ //
-		int[] corners= memory.getCorners();
-		temperMacLocList(mapLocList, corners[0],corners[1],corners[2],corners[3]); //Clamps the map locations down to limit
-		System.out.println("Memory clamped");
-	}
+//	protected void temperMapLocList(ArrayList<MapLocation> mapLocList){ //
+//		int[] corners= memory.getCorners();
+//		temperMacLocList(mapLocList, corners[0],corners[1],corners[2],corners[3]); //Clamps the map locations down to limit
+//		System.out.println("Memory clamped");
+//	}
 	
 	protected MapLocation temperLocation(MapLocation loc){
 		int[] corners= memory.getCorners();
@@ -189,8 +198,10 @@ public class RobotRunner {
 		
 		//System.out.println(Arrays.toString(corners));
 		
-		int x= Utility.clamp(loc.x,corners[0],corners[2]);
-		int y= Utility.clamp(loc.y,corners[1],corners[3]);
+		int tolerance= 2;
+		
+		int x= Utility.clamp(loc.x,corners[0]+robotSenseRadius-tolerance,corners[2]-robotSenseRadius+tolerance);
+		int y= Utility.clamp(loc.y,corners[1]+robotSenseRadius-tolerance,corners[3]-robotSenseRadius+tolerance);
 		
 		return new MapLocation(x,y);
 	}
