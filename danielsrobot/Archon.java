@@ -12,12 +12,13 @@ public class Archon extends RobotRunner {
 	private RobotInfo baby;
 	private int numSoldiersToSummon= 5;
 	private int numGaurdsToSummon= 5;
-	
+    private Move move;	
 
 	public Archon(RobotController rcin) {
 		super(rcin);
 		memory= new Information();
 		currentMode= mode.MAKE_SBABY;
+        move = new Move();
 	}
 	
 
@@ -75,7 +76,7 @@ public class Archon extends RobotRunner {
 		}
 	}
 
-    public static void runawayMove(RobotController rc, RobotInfo[] enemies) throws GameActionException{
+    public void runawayMove(RobotController rc, RobotInfo[] enemies) throws GameActionException{
             MapLocation myLoc = rc.getLocation();
             boolean canMove = false;
             int[] zVec = awayFromZombies(rc, enemies); 
@@ -86,15 +87,14 @@ public class Archon extends RobotRunner {
             MapLocation targetLoc = myLoc.add(dx, dy);
             Direction dir = myLoc.directionTo(targetLoc);
 
+            move.bugMove(rc, targetLoc);
+            
+            /*
             int rotation = 182842;  // random number initialize
 
             if(dir == Direction.OMNI) {
-                System.out.println(dx + " " + dy);
-                if((dx < 0 && dy < 0) || (dx > 0 && dy > 0)) {
-                    dir = dir.rotateRight().rotateRight();
-                }
-                else {
-                   dir = dir.rotateLeft().rotateLeft(); 
+                if(rc.isCoreReady()) {
+                    
                 }
             }
             else if(!rc.canMove(dir)) {
@@ -136,10 +136,10 @@ public class Archon extends RobotRunner {
             }
             else {
                 rc.move(moveDir);
-            }
+            }*/
     }
 
-    public static int[] getMaxSensibleXY(RobotController rc) {
+    public int[] getMaxSensibleXY(RobotController rc) {
         int r = rc.getType().sensorRadiusSquared;
         int x=0, y=0, max = 0;
         
@@ -160,7 +160,7 @@ public class Archon extends RobotRunner {
     // 1 = right rotate
     // 0 = u fucked
     // -1 = left rotate
-    public static int optimalRotation(RobotController rc, Direction dir, RobotInfo[] enemies) {
+    public int optimalRotation(RobotController rc, Direction dir, RobotInfo[] enemies) {
         MapLocation curLoc = rc.getLocation();
         MapLocation[] sensibleLoc = null;
         int[] center = getMaxSensibleXY(rc);
@@ -265,7 +265,7 @@ public class Archon extends RobotRunner {
         return 1;
     }
 
-    public static int[] awayFromZombies(RobotController rc, RobotInfo[] enemies) throws GameActionException {
+    public int[] awayFromZombies(RobotController rc, RobotInfo[] enemies) throws GameActionException {
         int dx = 0, dy = 0;
         int multiplier = 1; // repulsion force multiplier
         MapLocation myLoc = rc.getLocation();
@@ -285,6 +285,7 @@ public class Archon extends RobotRunner {
             dy += multiplier * (myLoc.y - enemyLoc.y);
         } 
         int[] vector = {dx, dy};
+        System.out.println("zombies dx: " + dx + " dy: " + dy);
         return vector;
 
         /*
@@ -324,7 +325,7 @@ public class Archon extends RobotRunner {
         */
     }
 
-    public static int[] awayFromEnemyTeam(RobotController rc, RobotInfo[] enemies) {
+    public int[] awayFromEnemyTeam(RobotController rc, RobotInfo[] enemies) {
         int dx = 0, dy = 0;
         int multiplier = 1; // repulsion force multiplier
         MapLocation myLoc = rc.getLocation();
@@ -343,13 +344,14 @@ public class Archon extends RobotRunner {
                 dy += multiplier * (myLoc.y - enemyLoc.y);
             }
         }
+        System.out.println("enemies dx: " + dx + " enemies dy: " + dy);
         int[] vector = {dx, dy};
         return vector;
 
     }
 
     // Very approximate. Not accurate at all. Heuristic af. But whatever.
-    public static boolean willDieInTurns(RobotController rc, RobotInfo[] enemies, int turns) {
+    public boolean willDieInTurns(RobotController rc, RobotInfo[] enemies, int turns) {
         double totaldmg = 0.0;
         double weapondelay = 0.5;
 
