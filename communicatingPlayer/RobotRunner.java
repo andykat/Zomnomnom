@@ -182,53 +182,6 @@ public class RobotRunner {
 		return new MapLocation(x,y);
 	}
 	
-	private void temperMacLocList(ArrayList<MapLocation> visitingList, int minX, int minY, int maxX, int maxY){ //make sure to temper to bound- radius!
-		//Check if the edge points have been detected-- if it has, trim all out of bound locations, if not, clamp them in the same fashion
-
-		int corruption= 0;
-		MapLocation corruptedPlace= new MapLocation(Integer.MIN_VALUE, Integer.MIN_VALUE);
-		
-		ArrayList<MapLocation> usedCorners= new ArrayList<MapLocation>(); //Each corner can be used once
-		for (int n= 0; n< visitingList.size(); n++){
-			MapLocation check= visitingList.get(n);
-			minX= minX + robotSenseRadius/(int)Math.sqrt(2);
-			minY= minY + robotSenseRadius/(int)Math.sqrt(2);
-			maxX= maxX - robotSenseRadius/(int)Math.sqrt(2);
-			maxY= maxY - robotSenseRadius/(int)Math.sqrt(2);
-			
-			int x= Utility.clamp(check.x,minX,maxX);
-			int y= Utility.clamp(check.y,minY,maxY);
-			
-			MapLocation clampedValue= new MapLocation(x,y); //Some way to trim such that the distance between sensing points don't overlap too much
-			visitingList.set(n, clampedValue);
-			
-			//clamping
-			
-			MapLocation[] corners= {new MapLocation(minX,minY), new MapLocation(minX,maxY), new MapLocation(maxX, minY), new MapLocation(maxX,maxY)};
-			for (int m= 0; m < corners.length; m++){
-				if (clampedValue.equals(corners[m])){
-					if (!usedCorners.contains(corners[m])){
-						usedCorners.add(clampedValue); //If it has yet to be used, use it
-					}
-					break;
-				}
-			}
-			
-			if (n== 0){
-				visitingList.set(n, clampedValue);
-			}else if (n> 0 && visitingList.get(n-1).distanceSquaredTo(clampedValue) > rc.getType().sensorRadiusSquared/2 && !usedCorners.contains(clampedValue)){ //If it is a not yet visiting corner
-				visitingList.set(n, clampedValue);
-			}else{
-				visitingList.set(n, corruptedPlace);
-				corruption++;
-				//System.out.println("corruption count: "+ corruption);
-			}
-		}
-		for (int n= 0; n< corruption; n++){
-			visitingList.remove(corruptedPlace);
-		}
-	}
-	
 	protected void senseMapEdges() throws GameActionException{ //THE CROSS IS ALWAYS MORE POWERFUL, diagonals quite useless
 		//When the checked point turns from off the map to on the map, that is the value
 		rc.setIndicatorString(0, "sense map edge");
