@@ -48,6 +48,14 @@ public class Information {
 		 return answer;
 	}
 	
+	public MapLocation getCenter(){
+		MapLocation answer= new MapLocation(0,0);
+		if (getNumRecordedCorners()== 4){
+			answer= new MapLocation(maxX-minX/2, maxY-minY/2);
+		}
+		return answer;
+	}
+	
 	public int getMapLongestDimension(){ //Returns -1 on not having all corners
 		int answer= 0;	
 		if (getNumRecordedCorners()== 4){//If you have all corners

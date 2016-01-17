@@ -54,12 +54,7 @@ public class Scout extends RobotRunner {
 				System.out.println("\t" + rc.getRoundNum()+":  brain size: "+memory.getBrainSize());
 				visitingIndex= 0;
 				
-				if (finalLaps< 2){ //If you have yet to travel the whole world
-					visitingList= createDividedSquarePerimNodes(searchLevel);
-				}else{
-					visitingList= createDividedSquareNodes(memory.getMapLongestDimension());
-				}
-				
+				visitingList= createDividedSquarePerimNodes(searchLevel);
 				
 				System.out.println("\t"+visitingList.size());
 				
