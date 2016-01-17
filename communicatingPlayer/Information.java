@@ -26,8 +26,7 @@ public class Information {
 	
 	private Map<MapLocation,int[]> map = new HashMap<MapLocation,int[]>(); 
 		//int[rubbleCount,PartsCount,DenHealth,NeutralCharacterType]
-	private Queue<int[]> downloadQueue= new LinkedList<int[]>();
-	
+
 	public int getNumRecordedCorners(){
 		 int answer= 0;
 		 if (minX!= Integer.MIN_VALUE){
@@ -148,13 +147,4 @@ public class Information {
 		    System.out.println("\t"+entry.getKey() + "/" + Arrays.toString(entry.getValue()));
 		}
 	}
-	
-	public void createQueue(){
-		for (Entry<MapLocation, int[]> entry : map.entrySet()){
-			//entry.getKey() 
-			//entry.getValue()
-			//Create message
-		}
-	}
-	
 }
