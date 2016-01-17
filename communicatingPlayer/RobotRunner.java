@@ -112,46 +112,25 @@ public class RobotRunner {
 		if (searchRange<= 0){
 			answer.add(rc.getLocation()); //zero range is yourself
 		}else{
-			int additive= 2* ((int) (robotSenseRadius * Math.sqrt(2)) -1);
+			int additive= 2* ((int) (robotSenseRadius * Math.sqrt(2)) -1)-1;
 			MapLocation prevPt = new MapLocation(Integer.MIN_VALUE, Integer.MIN_VALUE);
 			for (int x = -searchRange; x<= searchRange; x+= additive){
 				for (int y= -searchRange; y<= searchRange; y+= additive){
 					if (x== -searchRange || y== -searchRange || x+additive>= searchRange || y+additive >= searchRange){
 						MapLocation test= temperLocation(rc.getLocation().add(x,y));
-						if (test.distanceSquaredTo(prevPt) > rc.getType().sensorRadiusSquared/2 && !answer.contains(rc.getLocation().add(x,y))){ //Only add points if it is further than half away? //test.distanceSquaredTo(prevPt) > rc.getType().sensorRadiusSquared/2 && 
+						if (test.distanceSquaredTo(prevPt) > rc.getType().sensorRadiusSquared/2){ //Only add points if it is further than half away? //test.distanceSquaredTo(prevPt) > rc.getType().sensorRadiusSquared/2 && 
 							answer.add(rc.getLocation().add(x,y));
 						}
 					}
 				}
 			}
-		}
-		
-		Collections.sort(answer, new Comparator<MapLocation>(){
-			public int compare(MapLocation a, MapLocation b) {
-				int aVal= 0;
-				int bVal= 0;
-				for (int n= 0; n< RobotConstants.directions.length; n++){
-					if (RobotConstants.directions[n].equals(rc.getLocation().directionTo(a))){
-						aVal= n;
-					}
-					if (RobotConstants.directions[n].equals(rc.getLocation().directionTo(b))){
-						bVal= n;
-					}
-				}
-				if (aVal > bVal){
-					return 1;
-				}else if (aVal< bVal){
-					return -1;
-				}else{
-					return 0;
-				}
-			}
-			
-		});
-		
+		}		
 		for (int n= 0; n< answer.size(); n++){ //This way the direction comparator works properly
 			answer.set(n, temperLocation(answer.get(n)));
 		}
+		
+		
+		Utility.removeMapLocDuplicate(answer); //Remove duplicates
 		return answer;
 	}
 	

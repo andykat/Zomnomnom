@@ -11,7 +11,6 @@ public class Scout extends RobotRunner {
 	private enum mode{SEARCH_FOR_NEXT_NODE, SET_UP_SEARCH, COMBAT, MOVE_TO_OBJ};
 	private mode currentMode;
 	private mode prevMode;
-	private int visitingIndex= 0;
 	private int searchLevel= 0; //An increasing with equal to with of square/2 by which the scout loops to discover all the goodies
 	private RobotInfo enemies[];
 	private RobotInfo friends[];
@@ -36,8 +35,20 @@ public class Scout extends RobotRunner {
 	
 	public void debugPrint(){
 		System.out.println("VISITING LIST: " + visitingList.size());
-		System.out.println("VISITING INDEX: " + visitingIndex);
 		System.out.println("CURRENT MODE: " + currentMode);
+	}
+	
+	public void electNewLocationToGo(){
+		if (visitingList.size()> 0){
+			MapLocation closestCandidate= visitingList.get(0);
+			for (int n= 1; n< visitingList.size(); n++){ //Look for the next closest place to go
+				MapLocation contestant= visitingList.get(n);
+				if (rc.getLocation().distanceSquaredTo(closestCandidate) > rc.getLocation().distanceSquaredTo(contestant)){
+					closestCandidate= contestant;
+				}
+			}
+			targetLocation= closestCandidate;
+		}
 	}
 	
 	public void run() throws GameActionException{ //Scout gathers information, shares location with Archon, they go grab it
@@ -52,23 +63,21 @@ public class Scout extends RobotRunner {
 			if (currentMode== mode.SET_UP_SEARCH){
 				//debugPrint();
 				System.out.println("\t" + rc.getRoundNum()+":  brain size: "+memory.getBrainSize());
-				visitingIndex= 0;
-				
 				visitingList= createDividedSquarePerimNodes(searchLevel);
 				
 				System.out.println("\t"+visitingList.size());
 				
-				targetLocation= visitingList.get(visitingIndex);
+				electNewLocationToGo();
 				rc.setIndicatorString(0, "Setting up new search " + visitingList.size());
 				currentMode= mode.SEARCH_FOR_NEXT_NODE;
 			}else if (currentMode== mode.SEARCH_FOR_NEXT_NODE){	
 				rc.setIndicatorString(0, "Searching for object");
-				if (targetLocation.equals(rc.getLocation())){ //If you are at the right place
+				if (temperLocation(targetLocation).equals(rc.getLocation())){ //If you are at the right place
 					rc.setIndicatorString(0, "Gathering info");
 					rc.setIndicatorDot(targetLocation, 255, 0, 0);
 					gatherMapInfo();
-					visitingIndex++;
-					if (visitingIndex> visitingList.size()-1){
+					visitingList.remove(targetLocation); //You got there, complete quest
+					if (visitingList.size()<= 0){ //If there aren't any more new places to go
 						currentMode= mode.SET_UP_SEARCH;
 						visitingList.clear();
 						if (memory.getNumRecordedCorners() == 4){ //If you know the size of the map
@@ -80,8 +89,8 @@ public class Scout extends RobotRunner {
 						}else{
 							searchLevel+= (robotSenseRadius* Math.sqrt(2));
 						}
-					}else{
-						targetLocation= visitingList.get(visitingIndex);
+					}else{ //Elect the new candidate
+						electNewLocationToGo();
 					}
 				}else{
 					rc.setIndicatorDot(targetLocation, 255, 192, 203);

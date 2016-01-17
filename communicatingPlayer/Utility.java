@@ -1,8 +1,13 @@
 package communicatingPlayer;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Random;
+import java.util.Set;
 
 import battlecode.common.Direction;
+import battlecode.common.MapLocation;
 
 public class Utility {
 	private static Random randall= new Random();
@@ -23,6 +28,12 @@ public class Utility {
 //	        }
 //	    }
 //	}
+	
+	public static void removeMapLocDuplicate(ArrayList<MapLocation> a){
+		Set<MapLocation> s = new HashSet<MapLocation>(a);
+		a.clear();
+		a.addAll(s);
+	}
 	
 	public static void shuffleDirArray(Direction[] ar){
 	    for (int i = ar.length - 1; i > 0; i--)
