@@ -3,66 +3,111 @@ package communicatingPlayer;
 import battlecode.common.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Scout extends RobotRunner {
 	private ArrayList<MapLocation> visitingList;
-	private MapLocation targetAttraction;
-	private MapLocation homeBase;
-	static enum mode{HOME,PATROL,SEARCH,READY};
+	private MapLocation targetLocation;
+	private enum mode{SEARCH_FOR_NEXT_NODE, SET_UP_SEARCH, COMBAT, MOVE_TO_OBJ};
 	private mode currentMode;
-	private int visitingIndex= 0;
-	private boolean needToCheckOnMap= true;
-	
+	private mode prevMode;
+	private int searchLevel= 0; //An increasing with equal to with of square/2 by which the scout loops to discover all the goodies
+	private RobotInfo enemies[];
+	private RobotInfo friends[];
+	private boolean surroundingCheckedThisRound= false;
+	private boolean needsToFightThisRound= false;
+	private int finalLaps= 0;
+
 	public Scout(RobotController rcin) throws GameActionException {
 		super(rcin);
-		//mcomp= new OriginMapLocComparator(rc.getLocation()); //Closer to target the better
 		visitingList= new ArrayList<MapLocation>();
-		visitingList= createDividedRadius(RobotConstants.SCOUT_SEARCH_RANGE,10);
-		currentMode= mode.SEARCH;
-		homeBase= rc.getLocation();
+		currentMode= mode.SET_UP_SEARCH;
+	}
+	
+	public void checkSurrounding(){
+		System.out.println("Surrounding checked");
+		if (!surroundingCheckedThisRound){
+			enemies= rc.senseHostileRobots(rc.getLocation(), rc.getType().sensorRadiusSquared);
+			friends= rc.senseNearbyRobots(rc.getType().sensorRadiusSquared, myTeam);
+			needsToFightThisRound= friends.length <= enemies.length/2; //Being cautious, if we want to be completely paranoid we can literally just fight the second we sense any enemies
+		}
+	}
+	
+	public void debugPrint(){
+		System.out.println("VISITING LIST: " + visitingList.size());
+		System.out.println("CURRENT MODE: " + currentMode);
+	}
+	
+	public void electNewLocationToGo(){
+		if (visitingList.size()> 0){
+			MapLocation closestCandidate= visitingList.get(0);
+			for (int n= 1; n< visitingList.size(); n++){ //Look for the next closest place to go
+				MapLocation contestant= visitingList.get(n);
+				if (rc.getLocation().distanceSquaredTo(closestCandidate) > rc.getLocation().distanceSquaredTo(contestant)){
+					closestCandidate= contestant;
+				}
+			}
+			targetLocation= closestCandidate;
+		}
 	}
 	
 	public void run() throws GameActionException{ //Scout gathers information, shares location with Archon, they go grab it
 		if (rc.isCoreReady()){
-			switch (currentMode){
-			case SEARCH:
-				if (targetAttraction== null && visitingList.size()> 0){ //If you currently aren't going any where and you want to go somewhere
-					targetAttraction= visitingList.get(visitingIndex);
-				}else if (targetAttraction!= null){ //If you want to go somewhere
-					//System.out.println("Going somewhere" + visitingIndex);
-					if (rc.getLocation().equals(targetAttraction)){//If you are at the same place, set next destination
-						visitingIndex+= 1;
-						if (visitingIndex > visitingList.size()-1){ //Loopback
-							visitingIndex= 0;
-							needToCheckOnMap= false;
-						}
-						targetAttraction= visitingList.get(visitingIndex);
-					}else{
-						simpleMove(rc.getLocation().directionTo(targetAttraction));
-						if (needToCheckOnMap){
-							if (rc.canSenseLocation(targetAttraction)){ 
-								if (rc.onTheMap(targetAttraction)== false){//Check if the place you want to go is on the map
-									visitingList.remove(targetAttraction); //If it isn't remove it
-									if (visitingIndex > visitingList.size()-1){
-										visitingIndex= visitingList.size()-1;
-									}
-									targetAttraction= visitingList.get(visitingIndex);
-								}
+			for (int n= 0; n< visitingList.size(); n++){
+				rc.setIndicatorDot(visitingList.get(n), 0, 0, 255);
+			}
+			if (targetLocation!= null){//Always update dat shit
+				rc.setIndicatorString(0, String.valueOf(targetLocation.x));
+				rc.setIndicatorString(1, String.valueOf(targetLocation.y));
+			}
+			if (currentMode== mode.SET_UP_SEARCH){
+				//debugPrint();
+				System.out.println("\t" + rc.getRoundNum()+":  brain size: "+memory.getBrainSize());
+				visitingList= createDividedSquarePerimNodes(searchLevel);
+				
+				System.out.println("\t"+visitingList.size());
+				
+				electNewLocationToGo();
+				rc.setIndicatorString(0, "Setting up new search " + visitingList.size());
+				currentMode= mode.SEARCH_FOR_NEXT_NODE;
+			}else if (currentMode== mode.SEARCH_FOR_NEXT_NODE){	
+				rc.setIndicatorString(0, "Searching for object");
+				if (temperLocation(targetLocation).equals(rc.getLocation())){ //If you are at the right place
+					rc.setIndicatorString(0, "Gathering info");
+					rc.setIndicatorDot(targetLocation, 255, 0, 0);
+					gatherMapInfo();
+					visitingList.remove(targetLocation); //You got there, complete quest
+					if (visitingList.size()<= 0){ //If there aren't any more new places to go
+						currentMode= mode.SET_UP_SEARCH;
+						visitingList.clear();
+						if (memory.getNumRecordedCorners() == 4){ //If you know the size of the map
+							int checkSearch= searchLevel+ (int) (robotSenseRadius* Math.sqrt(2));
+							if (checkSearch> memory.getMapLongestDimension()){
+								finalLaps+= 1;  //Completing the final laps
 							}
+							searchLevel= (int) Math.min(memory.getMapLongestDimension(), searchLevel+(robotSenseRadius* Math.sqrt(2))); //Cap search length at max dimension
+						}else{
+							searchLevel+= (robotSenseRadius* Math.sqrt(2));
 						}
+					}else{ //Elect the new candidate
+						electNewLocationToGo();
 					}
 				}else{
-					currentMode= mode.HOME; //Maybe defending? 
+					rc.setIndicatorDot(targetLocation, 255, 192, 203);
+					rc.setIndicatorLine(rc.getLocation(), targetLocation, 255, 192, 203);
+					
+					MapLocation potentialUpdate= temperLocation(targetLocation);
+					if ((rc.canSense(targetLocation) && !rc.onTheMap(targetLocation)) || !rc.canSense(targetLocation)){ //If you see it is not on the map
+						if (targetLocation.equals(potentialUpdate)){ //Is not cut off by the edges of the "known" world
+							senseMapEdges();
+							bugMove(rc.getLocation(), targetLocation);
+						}else{ //If the modified version is not the same, modify it
+							targetLocation= potentialUpdate;
+						}
+					}else if (rc.canSense(targetLocation) && rc.onTheMap(targetLocation)){ //if you see it and it is on the map
+						bugMove(rc.getLocation(), targetLocation);
+					}
 				}
-				break;
-			case HOME:
-				simpleMove(rc.getLocation().directionTo(homeBase));
-				if (rc.canSense(homeBase))
-					currentMode= mode.READY;
-				break;
-			default:
-				//Move back towards the archon?
-				break;
 			}
 		}
 	}
