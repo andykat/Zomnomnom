@@ -7,8 +7,9 @@ import java.util.Arrays;
 
 public class Scout extends RobotRunner {
 	private ArrayList<MapLocation> visitingList;
-	private MapLocation targetLocation;
-	private enum mode{SEARCH_FOR_NEXT_NODE, SET_UP_SEARCH, COMBAT, MOVE_TO_OBJ};
+	private MapLocation targetNodeLoc;
+	private MapLocation targetObjLoc;
+	private enum mode{SEARCH_FOR_NEXT_NODE, SET_UP_SEARCH, COMBAT, SEARCH_AND_RESCUE};
 	private mode currentMode;
 	private mode prevMode;
 	private int searchLevel= 0; //An increasing with equal to with of square/2 by which the scout loops to discover all the goodies
@@ -16,7 +17,6 @@ public class Scout extends RobotRunner {
 	private RobotInfo friends[];
 	private boolean surroundingCheckedThisRound= false;
 	private boolean needsToFightThisRound= false;
-	private int finalLaps= 0;
 
 	public Scout(RobotController rcin) throws GameActionException {
 		super(rcin);
@@ -32,13 +32,8 @@ public class Scout extends RobotRunner {
 			needsToFightThisRound= friends.length <= enemies.length/2; //Being cautious, if we want to be completely paranoid we can literally just fight the second we sense any enemies
 		}
 	}
-	
-	public void debugPrint(){
-		System.out.println("VISITING LIST: " + visitingList.size());
-		System.out.println("CURRENT MODE: " + currentMode);
-	}
-	
-	public void electNewLocationToGo(){
+
+	public void electNewTargetNodeLoc(){ //Find the closest node and set that as the target node location, if there are more than 1 in the visitingList
 		if (visitingList.size()> 0){
 			MapLocation closestCandidate= visitingList.get(0);
 			for (int n= 1; n< visitingList.size(); n++){ //Look for the next closest place to go
@@ -47,7 +42,7 @@ public class Scout extends RobotRunner {
 					closestCandidate= contestant;
 				}
 			}
-			targetLocation= closestCandidate;
+			targetNodeLoc= closestCandidate;
 		}
 	}
 	
@@ -56,56 +51,82 @@ public class Scout extends RobotRunner {
 			for (int n= 0; n< visitingList.size(); n++){
 				rc.setIndicatorDot(visitingList.get(n), 0, 0, 255);
 			}
-			if (targetLocation!= null){//Always update dat shit
-				rc.setIndicatorString(0, String.valueOf(targetLocation.x));
-				rc.setIndicatorString(1, String.valueOf(targetLocation.y));
+			if (targetNodeLoc!= null){//Always update dat shit
+				rc.setIndicatorString(0, String.valueOf(targetNodeLoc.x));
+				rc.setIndicatorString(1, String.valueOf(targetNodeLoc.y));
 			}
 			if (currentMode== mode.SET_UP_SEARCH){
-				//debugPrint();
-				System.out.println("\t" + rc.getRoundNum()+":  brain size: "+memory.getBrainSize());
 				visitingList= createDividedSquarePerimNodes(searchLevel);
-				
-				System.out.println("\t"+visitingList.size());
-				
-				electNewLocationToGo();
+				electNewTargetNodeLoc();
 				rc.setIndicatorString(0, "Setting up new search " + visitingList.size());
 				currentMode= mode.SEARCH_FOR_NEXT_NODE;
-			}else if (currentMode== mode.SEARCH_FOR_NEXT_NODE){	
+			}else if (currentMode== mode.SEARCH_FOR_NEXT_NODE){	//================================================================================
 				rc.setIndicatorString(0, "Searching for object");
-				if (temperLocation(targetLocation).equals(rc.getLocation())){ //If you are at the right place
+				if (temperLocation(targetNodeLoc).equals(rc.getLocation())){ //If you are at the right place
 					rc.setIndicatorString(0, "Gathering info");
-					rc.setIndicatorDot(targetLocation, 255, 0, 0);
-					gatherMapInfo();
-					visitingList.remove(targetLocation); //You got there, complete quest
+					rc.setIndicatorDot(targetNodeLoc, 255, 0, 0);
+					gatherMapInfo(); //scan surrounding for goodies
+					visitingList.remove(targetNodeLoc); //You got there, complete quest
 					if (visitingList.size()<= 0){ //If there aren't any more new places to go
 						currentMode= mode.SET_UP_SEARCH;
 						visitingList.clear();
 						if (memory.getNumRecordedCorners() == 4){ //If you know the size of the map
-							int checkSearch= searchLevel+ (int) (robotSenseRadius* Math.sqrt(2));
-							if (checkSearch> memory.getMapLongestDimension()){
-								finalLaps+= 1;  //Completing the final laps
-							}
 							searchLevel= (int) Math.min(memory.getMapLongestDimension(), searchLevel+(robotSenseRadius* Math.sqrt(2))); //Cap search length at max dimension
 						}else{
 							searchLevel+= (robotSenseRadius* Math.sqrt(2));
 						}
 					}else{ //Elect the new candidate
-						electNewLocationToGo();
+						electNewTargetNodeLoc();
 					}
-				}else{
-					rc.setIndicatorDot(targetLocation, 255, 192, 203);
-					rc.setIndicatorLine(rc.getLocation(), targetLocation, 255, 192, 203);
 					
-					MapLocation potentialUpdate= temperLocation(targetLocation);
-					if ((rc.canSense(targetLocation) && !rc.onTheMap(targetLocation)) || !rc.canSense(targetLocation)){ //If you see it is not on the map
-						if (targetLocation.equals(potentialUpdate)){ //Is not cut off by the edges of the "known" world
+					if (memory.getNumObjectives()> 0){
+						prevMode= currentMode;
+						currentMode= mode.SEARCH_AND_RESCUE;
+					}
+					
+				}else{//If you are not at a node	
+					MapLocation potentialUpdate= temperLocation(targetNodeLoc);
+					if ((rc.canSense(targetNodeLoc) && !rc.onTheMap(targetNodeLoc)) || !rc.canSense(targetNodeLoc)){ //If you see it is not on the map
+						if (targetNodeLoc.equals(potentialUpdate)){ //Is not cut off by the edges of the "known" world
 							senseMapEdges();
-							marco.bugMove(rc, targetLocation);
+							marco.bugMove(rc, targetNodeLoc);
 						}else{ //If the modified version is not the same, modify it
-							targetLocation= potentialUpdate;
+							targetNodeLoc= potentialUpdate;
 						}
-					}else if (rc.canSense(targetLocation) && rc.onTheMap(targetLocation)){ //if you see it and it is on the map
-						marco.bugMove(rc, targetLocation);
+					}else if (rc.canSense(targetNodeLoc) && rc.onTheMap(targetNodeLoc)){ //if you see it and it is on the map
+						marco.bugMove(rc, targetNodeLoc);
+					}
+				}
+			}else if (currentMode== mode.SEARCH_AND_RESCUE){//===================================================================================
+				if (targetObjLoc== null){ //Elect a new objective
+					MapLocation objLoc= memory.getObjective(rc);
+					float checkObjVal= memory.getMapLocValue(objLoc, rc);
+					rc.setIndicatorString(0, "SEARCH AND RESCUE: val"+ checkObjVal);
+					if (objLoc!= null && checkObjVal > 0){//if it is part of memory, and its value is greater than 0
+						//TODO Tell everyone to go somewhere, once
+						targetObjLoc= objLoc;
+						marco.bugMove(rc, targetObjLoc);
+					}else{//Wasting a turn not moving?
+						//TODO Tell everyone that the objective is off
+						currentMode= prevMode;
+						memory.clearObjectives();
+					}
+				}else{ //End condition of the search
+					rc.setIndicatorDot(targetObjLoc, 255, 245, 238);
+					if (rc.canSense(targetObjLoc)){
+						gatherMapInfo(targetObjLoc);
+						if (memory.getMapLocValue(targetObjLoc, rc)<= 0){ //If value less than or equal to zero means the objective is over
+							memory.clearObjective(targetObjLoc);
+							targetObjLoc= null;
+						}else{
+							if (rc.getLocation().distanceSquaredTo(targetObjLoc) > 9){
+								rc.setIndicatorString(1, "see it, only moving loser");
+								marco.bugMove(rc, targetObjLoc);
+							}
+						}
+					}else{ //If you can't sense it, keep moving towards it, this is already (hopefully) the best goal with distance considered
+						rc.setIndicatorString(1, "blind moving");
+						marco.bugMove(rc, targetObjLoc);
 					}
 				}
 			}

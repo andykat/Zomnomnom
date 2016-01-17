@@ -241,6 +241,21 @@ public class RobotRunner {
 		}
 	}
 	
+	protected void gatherMapInfo(MapLocation targetObjLoc) throws GameActionException{ //This is for a single place, used for rescue updates
+		if (rc.canSense(targetObjLoc)){
+			RobotInfo targetRobot= rc.senseRobotAtLocation(targetObjLoc);
+			if (targetRobot!= null){
+				if (targetRobot.team.equals(Team.NEUTRAL)){//IS a neutral robot
+					memory.addNeutralRobotMapInfo(targetObjLoc, targetRobot);
+				}else if (targetRobot.team.equals(Team.ZOMBIE)){
+					memory.addMapInfo(targetObjLoc, (int)targetRobot.health, RobotConstants.mapTypes.ZOMBIE_DEN);
+				}
+			}
+			memory.addMapInfo(targetObjLoc, (int) rc.senseRubble(targetObjLoc), RobotConstants.mapTypes.RUBBLE);
+			memory.addMapInfo(targetObjLoc, (int) rc.senseParts(targetObjLoc), RobotConstants.mapTypes.PARTS);
+		}
+	}
+	
 	protected void gatherMapInfo() throws GameActionException{
 		rc.setIndicatorString(0, "Sensing");
 		RobotInfo[] enemyRobotsInRange = rc.senseNearbyRobots(rc.getType().sensorRadiusSquared, Team.ZOMBIE);
@@ -252,7 +267,7 @@ public class RobotRunner {
 		
 		RobotInfo[] neutralRobotsInRange = rc.senseNearbyRobots(rc.getType().sensorRadiusSquared, Team.NEUTRAL);
 		for (int n= 0; n< neutralRobotsInRange.length; n++){
-			memory.addMapInfo(neutralRobotsInRange[n].location, neutralRobotsInRange[n]);
+			memory.addNeutralRobotMapInfo(neutralRobotsInRange[n].location, neutralRobotsInRange[n]);
 		}
 		
 		MapLocation[] partsLoc= rc.sensePartLocations(rc.getType().sensorRadiusSquared);

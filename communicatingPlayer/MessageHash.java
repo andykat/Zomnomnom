@@ -14,16 +14,7 @@ package communicatingPlayer;
  * To unhash the message, do unhashMessage(array of 2 integers)
  * 
  */
-public class MessageHash{
-	private int[][] mranges0 = {{1000,1000,100,50,100}, 
-			   {2,2,2},
-			   {12,12,12}
-			  };
-
-	private int[][] mranges1 = {{4,4,4,50,100,50,100},
-			   {2,2,2},
-			   {23,23,2}
-			  };
+public class MessageHash implements MessageHashConstants{
 	private int[] ranges0Product;
 	private int[] ranges1Product;
 	public MessageHash(){

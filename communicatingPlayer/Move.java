@@ -15,6 +15,9 @@ public class Move {
 
 	public int bugMove(RobotController rc, MapLocation end){
 		try {
+			rc.setIndicatorDot(end, 255, 192, 203);
+			rc.setIndicatorLine(rc.getLocation(), end, 255, 192, 203);
+			
 			MapLocation curLoc = rc.getLocation();
 			int dist = curLoc.distanceSquaredTo(end);
 			Direction dir = curLoc.directionTo(end);

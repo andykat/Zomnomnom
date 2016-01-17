@@ -56,7 +56,7 @@ public class Archon extends RobotRunner {
 		if (rc.isCoreReady()){
 			signaling();
 			if (!spawned){
-				buildRobot(RobotType.SOLDIER);
+				buildRobot(RobotType.SCOUT);
 				spawned= true;
 			}
 		}

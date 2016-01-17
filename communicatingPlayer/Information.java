@@ -2,11 +2,13 @@ package communicatingPlayer;
 import battlecode.common.*;
 import communicatingPlayer.RobotConstants.mapTypes;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.PriorityQueue;
 import java.util.Queue;
 
 //MAP ITERATION: http://stackoverflow.com/questions/46898/how-to-efficiently-iterate-over-each-entry-in-a-map
@@ -17,7 +19,8 @@ import java.util.Queue;
 //getInitialArchonLocations().get(0) for seed point, locations sent as difference to that starting value
 
 
-public class Information {
+public class Information { //http://stackoverflow.com/questions/683041/java-how-do-i-use-a-priorityqueue
+	//ONLY STORES THINGS THAT ARE MAP RELATED
 	//Map borders
 	private int minX= Integer.MIN_VALUE;
 	private int minY= Integer.MIN_VALUE;
@@ -26,6 +29,7 @@ public class Information {
 	
 	private Map<MapLocation,int[]> map = new HashMap<MapLocation,int[]>(); 
 		//int[rubbleCount,PartsCount,DenHealth,NeutralCharacterType]
+	private ArrayList<MapLocation> objectives = new ArrayList<MapLocation>(); 
 
 	public int getNumRecordedCorners(){
 		 int answer= 0;
@@ -47,14 +51,64 @@ public class Information {
 		 return answer;
 	}
 	
-	public MapLocation getCenter(){
-		MapLocation answer= new MapLocation(0,0);
-		if (getNumRecordedCorners()== 4){
-			answer= new MapLocation(maxX-minX/2, maxY-minY/2);
+	public int getNumObjectives(){
+		return objectives.size();
+	}
+	
+	public void clearObjectives(){ //Being called in the class when it's time to give up (usually when the highest value is not > 0
+		objectives.clear();
+	}
+	
+	
+	public float getMapLocValue(MapLocation objLoc, RobotController rc){ //Returns the value of a given position 
+		//TODO if worth it, take time to sense around the given location for overall value
+		///int[rubbleCount,PartsCount,DenHealth,NeutralCharacterType]
+		float value= 0;
+		if (map.containsKey(objLoc)){
+			int[] info = map.get(objLoc);
+			value= -info[0]/100; //Every 100 rubble is -1 valuable
+			value+= info[1];
+
+			//Zombie dens worth more ealrier, worth a lot less later (more likely to do)
+			//Lower the health of the den, more worthy the goal
+			//value+= (250-rc.getRoundNum())*(GameConstants.DEN_PART_REWARD)+ ((RobotType.ZOMBIEDEN.maxHealth-info[2])/RobotType.ZOMBIEDEN.maxHealth) * GameConstants.DEN_PART_REWARD ;
+			if (info[3]> -1 && RobotConstants.posNRobotTypes[info[3]]!= null)
+				value+= RobotConstants.posNRobotTypes[info[3]].partCost;
+		}
+		return value;
+	}
+	
+	public void clearObjective(MapLocation loc){
+		if (objectives.contains(loc)){
+			objectives.remove(loc);
+		}
+	}
+	
+	public MapLocation getObjective(RobotController rc){ //Returns the next most valuable objective to get to
+		MapLocation answer= null;
+		if (objectives.size()> 0){
+			float bestVal= getMapLocValue(objectives.get(0),rc);
+			answer= objectives.get(0);
+			for (int n = 1; n < objectives.size(); n++){
+				float candidateVal= getMapLocValue(objectives.get(n), rc);
+				if (candidateVal > bestVal){
+					candidateVal= bestVal;
+					answer= objectives.get(n);
+				}
+			}
 		}
 		return answer;
 	}
 	
+	private void updateObjectives(MapLocation loc){
+		if (objectives.contains(loc)){
+			objectives.remove(loc);
+			objectives.add(loc);
+		}else{
+			objectives.add(loc);
+		}
+	}
+
 	public int getMapLongestDimension(){ //Returns -1 on not having all corners
 		int answer= 0;	
 		if (getNumRecordedCorners()== 4){//If you have all corners
@@ -104,12 +158,16 @@ public class Information {
 	public int getBrainSize(){
 		return map.size();
 	}
+
 	
-	public void addMapInfo(MapLocation loc, RobotInfo ri){
-		addInfo(loc, 3, getRobotIntType(ri.type));
+	public void addNeutralRobotMapInfo(MapLocation loc, RobotInfo ri){//Adding individual values
+		if (ri.team.equals(Team.NEUTRAL)){
+			addInfo(loc, 3, getRobotIntType(ri.type));
+			updateObjectives(loc);
+		}
 	}
 	
-	public void addMapInfo(MapLocation loc, int value, RobotConstants.mapTypes mapType){
+	public void addMapInfo(MapLocation loc, int value, RobotConstants.mapTypes mapType){//Adding individual values
 		if (mapType.equals(RobotConstants.mapTypes.RUBBLE)){
 			addInfo(loc,0, value);
 		}else if (mapType.equals(RobotConstants.mapTypes.PARTS)){
@@ -117,9 +175,10 @@ public class Information {
 		}else if (mapType.equals(RobotConstants.mapTypes.ZOMBIE_DEN)){
 			addInfo(loc,2,value);
 		}
+		updateObjectives(loc);
 	}
 	
-	private void addInfo(MapLocation key, int index, int value){
+	private void addInfo(MapLocation key, int index, int value){ //Adding individual values
 		if (map.containsKey(key)){
 			map.get(key)[index]= value;
 		}else{
@@ -127,11 +186,13 @@ public class Information {
 			info[index]= value;
 			map.put(key, info);
 		}
+		updateObjectives(key);
 	}
 	
 	public void addMapInfo(MapLocation loc, int rubbleCount, int partsCount, int denHealth,RobotInfo ri){
 		int[] info= {rubbleCount, partsCount, denHealth, getRobotIntType(ri.type)};
 		map.put(loc, info); //Old value will get replaced
+		updateObjectives(loc);
 	}
 	
 	public int[] getInformation(MapLocation loc){
