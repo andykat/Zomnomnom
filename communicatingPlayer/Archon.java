@@ -1,65 +1,63 @@
 package communicatingPlayer;
 
+import java.util.ArrayList;
+
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
+import battlecode.common.Signal;
 
 public class Archon extends RobotRunner {
-	private enum mode{MAKE_SBABY,WAIT_FOR_BABY,RUN_TO_ENEMY};
+	private enum mode{CREATE_EYES};
 	private mode currentMode;
-	private Information memory;
-	private RobotInfo baby;
-	private int numSoldiersToSummon= 5;
-	private int numGaurdsToSummon= 5;
-	
+	private int leaderID;
+	private boolean spawned= false;
+
 	public Archon(RobotController rcin) {
 		super(rcin);
 		memory= new Information();
-		currentMode= mode.MAKE_SBABY;
+		currentMode= mode.CREATE_EYES;
+		leaderID= Integer.MAX_VALUE;
+	}
+	
+	public void signaling() throws GameActionException{
+		if (rc.getRoundNum()== 0){ //Election on first round hurray!
+			Signal[] incomingMessages= rc.emptySignalQueue();
+			rc.setIndicatorString(0, ""+incomingMessages.length+" messages received");
+			rc.broadcastMessageSignal(0, 0, 100);
+			leaderID= incomingMessages.length;
+		}else{
+			if (leaderID== 0){
+				sendInstructions();
+			}else{
+				followInstructions();
+			}
+		}
+	}
+	
+	public void sendInstructions(){
+		
+	}
+	
+	public void followInstructions(){
+		Signal[] incomingMessages= rc.emptySignalQueue();
+		for (int n= 0; n< incomingMessages.length; n++){
+			if (incomingMessages[n].getTeam().equals(myTeam)){
+				//Do something about it
+				
+			}
+		}
+		
 	}
 	
 	public void run() throws GameActionException{
 		if (rc.isCoreReady()){
-			switch (currentMode){
-			case MAKE_SBABY:
-				Direction canBuildDir= getSpawnableDir(RobotType.SCOUT);
-				if (canBuildDir!= null){
-					rc.build(canBuildDir, RobotType.SCOUT);
-					RobotInfo[] potentialBabies= rc.senseNearbyRobots(2);
-					for (int n= 0; n< potentialBabies.length; n++){
-						if (potentialBabies[n].type.equals(RobotType.SCOUT)){
-							baby= potentialBabies[n];
-							//System.out.println("FOUND BABY!");
-							currentMode= mode.WAIT_FOR_BABY;
-							break;
-						}
-					}
-				}
-				
-				break;
-			case WAIT_FOR_BABY:
-//				RobotType summon= RobotConstants.posNRobotTypes[randall.nextInt(2)+3];
-//				if (summon.equals(RobotType.SOLDIER)){
-//					if (numSoldiersToSummon> 0){
-//						numSoldiersToSummon--;
-//						buildRobot(summon);
-//					}
-//				}else if (summon.equals(RobotType.GUARD)){
-//					if (numGaurdsToSummon> 0){
-//						numGaurdsToSummon--;
-//						buildRobot(summon);
-//					}
-//				}
-//				
-//				if (numGaurdsToSummon<= 0 && numSoldiersToSummon<= 0){
-//					bugMove(rc.getLocation(), eden);
-//				}
-				break;
-			default:
-				//Move back towards the archon?
-				break;
+			signaling();
+			if (!spawned){
+				buildRobot(RobotType.SOLDIER);
+				spawned= true;
 			}
 		}
 	}

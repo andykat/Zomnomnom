@@ -14,6 +14,8 @@ public class RobotPlayer {
                 RobotType.GUARD, RobotType.GUARD, RobotType.VIPER, RobotType.TURRET};
         boolean map[][] = new boolean [100][100];
         
+        Move marco = new Move();
+        
         Random rand = new Random(rc.getID());
         int myAttackRange = 0;
         Team myTeam = rc.getTeam();
@@ -35,17 +37,9 @@ public class RobotPlayer {
                 try {
                     int fate = rand.nextInt(1000);
                     // Check if this ARCHON's core is ready
-                    if (fate % 10 == 2) {
-                        // Send a message signal containing the data (6370, 6147)
-                        rc.broadcastMessageSignal(6370, 6147, 80);
-                    }
+
                     Signal[] signals = rc.emptySignalQueue();
-                    if (signals.length > 0) {
-                        // Set an indicator string that can be viewed in the client
-                        rc.setIndicatorString(0, "I received a signal this turn!");
-                    } else {
-                        rc.setIndicatorString(0, "I don't any signal buddies");
-                    }
+
                     if (rc.isCoreReady()) {
                         if (fate < 800) {
                             // Choose a random direction to try to move in
@@ -119,7 +113,7 @@ public class RobotPlayer {
                 // at the end of it, the loop will iterate once per game round.
         		
                 try {
-                	bugMove(rc, rc.getLocation(), new MapLocation(155,304));
+                	int dist = marco.bugMove(rc, new MapLocation(155,304));
                 	 Clock.yield();
                 } catch (Exception e) {
                     System.out.println(e.getMessage());

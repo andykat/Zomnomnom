@@ -23,13 +23,10 @@ public class Information {
 	private int minY= Integer.MIN_VALUE;
 	private int maxX= Integer.MAX_VALUE;
 	private int maxY= Integer.MAX_VALUE;
-	private int[] edgeCheckY= {-1,-1,0,1,1,1,0,-1};
-	private int[] edgeCheckX= {0,1,1,1,0,-1,-1,-1};
 	
 	private Map<MapLocation,int[]> map = new HashMap<MapLocation,int[]>(); 
 		//int[rubbleCount,PartsCount,DenHealth,NeutralCharacterType]
-	private Queue<int[]> downloadQueue= new LinkedList<int[]>();
-	
+
 	public int getNumRecordedCorners(){
 		 int answer= 0;
 		 if (minX!= Integer.MIN_VALUE){
@@ -50,62 +47,46 @@ public class Information {
 		 return answer;
 	}
 	
+	public MapLocation getCenter(){
+		MapLocation answer= new MapLocation(0,0);
+		if (getNumRecordedCorners()== 4){
+			answer= new MapLocation(maxX-minX/2, maxY-minY/2);
+		}
+		return answer;
+	}
+	
+	public int getMapLongestDimension(){ //Returns -1 on not having all corners
+		int answer= 0;	
+		if (getNumRecordedCorners()== 4){//If you have all corners
+			int w= maxX- minX;
+			int l= maxY- minY;
+			if (w> l){
+				answer= w;
+			}else{ //For cases of equality for if l is longer, idea the same
+				answer= l;
+			}
+		}
+		return answer;
+	}
+	
 	public int[] getCorners(){ //Can return even though the corners have yet to be found
 		int[] answer= {minX,minY,maxX,maxY};
 		return answer;
 	}
 	
-	public void addCornerValueCandidate(Direction dir, MapLocation loc){
-		for (int n= 0; n< RobotConstants.directions.length; n++){
-			if (RobotConstants.directions[n].equals(dir)){
-				int testX= loc.x + edgeCheckX[n];
-				int testY= loc.y + edgeCheckY[n];
-				if (n== 0){
-					if (minY < testY){
-						minY= testY;
-					}
-				}else if (n== 1){
-					if (minY < testY){
-						minY= testY;
-					}
-					if (maxX > testX){
-						maxX= testX;
-					}
-				}else if (n== 2){
-					if (maxX > testX){
-						maxX= testX;
-					}
-				}else if (n== 3){
-					if (maxY > testY){
-						maxY= testY;
-					}
-					if (maxX > testX){
-						maxX= testX;
-					}
-				}else if (n== 4){
-					if (maxY > testY){
-						maxY= testY;
-					}
-				}else if (n== 5){
-					if (maxY > testY){
-						maxY= testY;
-					}
-					if (minX < testX){
-						maxX= testX;
-					}
-				}else if (n== 6){
-					if (minX < testX){
-						minX= testX;
-					}
-				}else if (n== 7){
-					if (minY < testY){
-						minY= testY;
-					}
-					if (minX < testX){
-						minX= testX;
-					}
-				}
-			}
+	public void addCornerValueCandidate(Direction dir, MapLocation loc){ //You add the direction of your check and the corresponding map location when the map first comes on grid
+		if (dir.equals(Direction.NORTH)){
+			if (loc.y > minY)
+				minY= loc.y;
+		}else if (dir.equals(Direction.EAST)){
+			if (loc.x < maxX)
+				maxX= loc.x;
+		}else if (dir.equals(Direction.SOUTH)){
+			if (loc.y < maxY)
+				maxY= loc.y;
+		}else if (dir.equals(Direction.WEST)){
+			if (loc.x > minX)
+				minX= loc.x;
 		}
 	}
 	
@@ -166,13 +147,4 @@ public class Information {
 		    System.out.println("\t"+entry.getKey() + "/" + Arrays.toString(entry.getValue()));
 		}
 	}
-	
-	public void createQueue(){
-		for (Entry<MapLocation, int[]> entry : map.entrySet()){
-			//entry.getKey() 
-			//entry.getValue()
-			//Create message
-		}
-	}
-	
 }
