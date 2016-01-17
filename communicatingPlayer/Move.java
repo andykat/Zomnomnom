@@ -20,21 +20,44 @@ public class Move {
 			Direction dir = curLoc.directionTo(end);
 			
 			for(int i=0;i<prevDistanceN;i++){
-				if(dist == prevDistanceN){
+				if(dist == prevDistance[i]){
 					if(rc.isCoreReady()){
 						if(rc.senseRobotAtLocation(curLoc.add(dir)) == null){
-							rc.clearRubble(dir);
-							for(int j=prevDistanceN-1;j>0;j--){
-								prevDistance[j] = prevDistance[j-1];
+							if(rc.senseRubble(curLoc.add(dir)) < 100.0){
+								break;
+							}
+							else{
+								rc.clearRubble(dir);
+								for(int j=prevDistanceN-1;j>0;j--){
+									prevDistance[j] = prevDistance[j-1];
+								}
+								prevDistance[0] = dist;
+							}
+						}
+						else{
+							dir.rotateRight();
+							if(rc.senseRobotAtLocation(curLoc.add(dir)) == null){
+								if(rc.senseRubble(curLoc.add(dir)) < 100.0){
+									break;
+								}
+								else{
+									rc.clearRubble(dir);
+									for(int j=prevDistanceN-1;j>0;j--){
+										prevDistance[j] = prevDistance[j-1];
+									}
+									prevDistance[0] = dist;
+								}
+							}
+							else{
+								//Blocked by neutral robot
+								return 99999;
 							}
 						}
 					}
 					return dist;
 				}
 			}
-			for(int j=prevDistanceN-1;j>0;j--){
-				prevDistance[j] = prevDistance[j-1];
-			}
+			
 			//Direction dir = start.directionTo(end);
 			
 			int c=0;
@@ -53,6 +76,10 @@ public class Move {
 			if(c<7){
 				if(rc.isCoreReady()){
 					rc.move(dir);
+					for(int j=prevDistanceN-1;j>0;j--){
+						prevDistance[j] = prevDistance[j-1];
+					}
+					prevDistance[0] = dist;
 					return dist;
 				}
 			}
@@ -65,6 +92,7 @@ public class Move {
 							for(int j=prevDistanceN-1;j>0;j--){
 								prevDistance[j] = prevDistance[j-1];
 							}
+							prevDistance[0] = dist;
 						}
 					}
 				}
