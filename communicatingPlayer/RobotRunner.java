@@ -106,7 +106,7 @@ public class RobotRunner {
 		//TODO move and alternate course based on enemy repulsion
 	}
 	
-	protected ArrayList<MapLocation> createDividedSquareNodes(int searchRange) throws GameActionException{
+	protected ArrayList<MapLocation> createDividedSquarePerimNodes(int searchRange) throws GameActionException{
 		ArrayList<MapLocation> answer= new ArrayList<MapLocation>();
 
 		if (searchRange<= 0){
@@ -118,7 +118,7 @@ public class RobotRunner {
 				for (int y= -searchRange; y<= searchRange; y+= additive){
 					if (x== -searchRange || y== -searchRange || x+additive>= searchRange || y+additive >= searchRange){
 						MapLocation test= temperLocation(rc.getLocation().add(x,y));
-						if (test.distanceSquaredTo(prevPt) >= rc.getType().sensorRadiusSquared && !answer.contains(rc.getLocation().add(x,y))){ //Only add points if it is further than half away?
+						if (test.distanceSquaredTo(prevPt) > rc.getType().sensorRadiusSquared/2 &&!answer.contains(rc.getLocation().add(x,y))){ //Only add points if it is further than half away? //test.distanceSquaredTo(prevPt) > rc.getType().sensorRadiusSquared/2 && 
 							answer.add(rc.getLocation().add(x,y));
 							prevPt= temperLocation(rc.getLocation().add(x,y));
 						}
@@ -153,11 +153,25 @@ public class RobotRunner {
 		for (int n= 0; n< answer.size(); n++){ //This way the direction comparator works properly
 			answer.set(n, temperLocation(answer.get(n)));
 		}
-		
-		//Sort the answers
-		
 		return answer;
 	}
+	
+	protected ArrayList<MapLocation> createDividedSquareNodes(int searchRange) throws GameActionException{
+		ArrayList<MapLocation> answer= new ArrayList<MapLocation>();
+
+		if (searchRange<= 0){
+			answer.add(rc.getLocation()); //zero range is yourself
+		}else{
+			int additive= ((int) (robotSenseRadius * Math.sqrt(2)) -1);
+			for (int x = -searchRange; x<= searchRange; x+= additive){
+				for (int y= -searchRange; y<= searchRange; y+= additive){
+					answer.add(temperLocation(rc.getLocation().add(x,y)));
+				}
+			}
+		}
+		return answer;
+	}
+	
 	
 	protected ArrayList<MapLocation> createDividedRadius(int searchRange, int radius) throws GameActionException{
 		ArrayList<MapLocation> answer= new ArrayList<MapLocation>();

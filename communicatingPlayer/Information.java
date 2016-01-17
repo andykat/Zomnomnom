@@ -48,6 +48,20 @@ public class Information {
 		 return answer;
 	}
 	
+	public int getMapLongestDimension(){ //Returns -1 on not having all corners
+		int answer= 0;	
+		if (getNumRecordedCorners()== 4){//If you have all corners
+			int w= maxX- minX;
+			int l= maxY- minY;
+			if (w> l){
+				answer= w;
+			}else{ //For cases of equality for if l is longer, idea the same
+				answer= l;
+			}
+		}
+		return answer;
+	}
+	
 	public int[] getCorners(){ //Can return even though the corners have yet to be found
 		int[] answer= {minX,minY,maxX,maxY};
 		return answer;

@@ -8,7 +8,7 @@ import java.util.Arrays;
 public class Scout extends RobotRunner {
 	private ArrayList<MapLocation> visitingList;
 	private MapLocation targetLocation;
-	private enum mode{SEARCH_FOR_OBJ, SET_UP_SEARCH, COMBAT, MOVE_TO_OBJ, GURU};
+	private enum mode{SEARCH_FOR_NEXT_NODE, SET_UP_SEARCH, COMBAT, MOVE_TO_OBJ};
 	private mode currentMode;
 	private mode prevMode;
 	private int visitingIndex= 0;
@@ -17,6 +17,7 @@ public class Scout extends RobotRunner {
 	private RobotInfo friends[];
 	private boolean surroundingCheckedThisRound= false;
 	private boolean needsToFightThisRound= false;
+	private int finalLaps= 0;
 
 	public Scout(RobotController rcin) throws GameActionException {
 		super(rcin);
@@ -52,14 +53,20 @@ public class Scout extends RobotRunner {
 				//debugPrint();
 				System.out.println("\t" + rc.getRoundNum()+":  brain size: "+memory.getBrainSize());
 				visitingIndex= 0;
-				visitingList= createDividedSquareNodes(searchLevel);
+				
+				if (finalLaps< 2){ //If you have yet to travel the whole world
+					visitingList= createDividedSquarePerimNodes(searchLevel);
+				}else{
+					visitingList= createDividedSquareNodes(memory.getMapLongestDimension());
+				}
+				
+				
 				System.out.println("\t"+visitingList.size());
 				
 				targetLocation= visitingList.get(visitingIndex);
-				
 				rc.setIndicatorString(0, "Setting up new search " + visitingList.size());
-				currentMode= mode.SEARCH_FOR_OBJ;
-			}else if (currentMode== mode.SEARCH_FOR_OBJ){	
+				currentMode= mode.SEARCH_FOR_NEXT_NODE;
+			}else if (currentMode== mode.SEARCH_FOR_NEXT_NODE){	
 				rc.setIndicatorString(0, "Searching for object");
 				if (targetLocation.equals(rc.getLocation())){ //If you are at the right place
 					rc.setIndicatorString(0, "Gathering info");
@@ -69,24 +76,28 @@ public class Scout extends RobotRunner {
 					if (visitingIndex> visitingList.size()-1){
 						currentMode= mode.SET_UP_SEARCH;
 						visitingList.clear();
-						searchLevel+= (robotSenseRadius* Math.sqrt(2));
+						if (memory.getNumRecordedCorners() == 4){ //If you know the size of the map
+							int checkSearch= searchLevel+ (int) (robotSenseRadius* Math.sqrt(2));
+							if (checkSearch> memory.getMapLongestDimension()){
+								finalLaps+= 1;  //Completing the final laps
+							}
+							searchLevel= (int) Math.min(memory.getMapLongestDimension(), searchLevel+(robotSenseRadius* Math.sqrt(2))); //Cap search length at max dimension
+						}else{
+							searchLevel+= (robotSenseRadius* Math.sqrt(2));
+						}
 					}else{
 						targetLocation= visitingList.get(visitingIndex);
 					}
 				}else{
 					rc.setIndicatorDot(targetLocation, 255, 192, 203);
 					rc.setIndicatorLine(rc.getLocation(), targetLocation, 255, 192, 203);
-			
-					if (rc.canSense(targetLocation) && !rc.onTheMap(targetLocation)){ //If you see it is not on the map
-						senseMapEdges();
-						targetLocation= temperLocation(targetLocation);	
-					}else if (!rc.canSense(targetLocation)){//It might be you haven't moved to it yet, or it might be that you are too far away to ever see it
-						senseMapEdges();
-						MapLocation potentialUpdate= temperLocation(targetLocation);
-						if (targetLocation.equals(potentialUpdate)){ //Is not cut off by the edges of the known world
-							rc.setIndicatorString(0, "tempered");
+					
+					MapLocation potentialUpdate= temperLocation(targetLocation);
+					if ((rc.canSense(targetLocation) && !rc.onTheMap(targetLocation)) || !rc.canSense(targetLocation)){ //If you see it is not on the map
+						if (targetLocation.equals(potentialUpdate)){ //Is not cut off by the edges of the "known" world
+							senseMapEdges();
 							bugMove(rc.getLocation(), targetLocation);
-						}else{ //If it is actually clamped
+						}else{ //If the modified version is not the same, modify it
 							targetLocation= potentialUpdate;
 						}
 					}else if (rc.canSense(targetLocation) && rc.onTheMap(targetLocation)){ //if you see it and it is on the map
