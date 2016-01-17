@@ -15,7 +15,7 @@ public class RobotPlayer implements RobotConstants{
 		}else if (rc.getType().equals(RobotType.GUARD)){
 			rr= new Guard(rc);
 		}else if (rc.getType().equals(RobotType.SOLDIER)){
-			rr= new Soldier(rc);
+			rr= new Scout(rc);
 		}else{
 			rr= new RobotRunner(rc); //In case some one fucks up
 		}

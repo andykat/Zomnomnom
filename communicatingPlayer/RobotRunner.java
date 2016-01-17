@@ -1,9 +1,6 @@
 package communicatingPlayer;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Random;
 
 import battlecode.common.Direction;
@@ -23,6 +20,7 @@ public class RobotRunner {
 	protected MapLocation eden;
 	protected Information memory;
 	protected int robotSenseRadius;
+	protected Move marco;
 
 	public RobotRunner(RobotController rcin){
 		this.rc= rcin;
@@ -32,10 +30,19 @@ public class RobotRunner {
 		eden= rc.getInitialArchonLocations(myTeam)[0];
 		memory= new Information(); //Everybody has a brain
 		robotSenseRadius= (int) Math.sqrt(rc.getType().sensorRadiusSquared);
+		marco= new Move();
 	}
 	
 	public void run() throws GameActionException{
-		//System.out.println("Override this~~");
+		//Can write here a general case so all non-specified class can do something
+	}
+	
+	protected void sendInstructions(){
+		
+	}
+	
+	protected void followInstructions(){
+		
 	}
 	
 	protected void bugMove(MapLocation start, MapLocation end){
@@ -66,7 +73,6 @@ public class RobotRunner {
             e.printStackTrace();
         }
 	}
-	
 	
 	protected boolean simpleAttack() throws GameActionException{
 		boolean attacked= false;
@@ -100,10 +106,6 @@ public class RobotRunner {
 			}
 		}
 		return answer;
-	}
-	
-	public void avoidEnemyMove(){
-		//TODO move and alternate course based on enemy repulsion
 	}
 	
 	protected ArrayList<MapLocation> createDividedSquarePerimNodes(int searchRange) throws GameActionException{
@@ -159,21 +161,8 @@ public class RobotRunner {
 		}
 	}
 	
-//	protected void temperMapLocList(ArrayList<MapLocation> mapLocList){ //
-//		int[] corners= memory.getCorners();
-//		temperMacLocList(mapLocList, corners[0],corners[1],corners[2],corners[3]); //Clamps the map locations down to limit
-//		System.out.println("Memory clamped");
-//	}
-	
 	protected MapLocation temperLocation(MapLocation loc){
-		int[] corners= memory.getCorners();
-//		int minX= corners[0] + (int) (robotSenseRadius/Math.sqrt(2));
-//		int minY= corners[1] + (int) (robotSenseRadius/Math.sqrt(2));
-//		int maxX= corners[2] - (int) (robotSenseRadius/Math.sqrt(2));
-//		int maxY= corners[3] - (int) (robotSenseRadius/Math.sqrt(2));
-		
-		//System.out.println(Arrays.toString(corners));
-		
+		int[] corners= memory.getCorners();		
 		int tolerance= 2;
 		
 		int x= Utility.clamp(loc.x,corners[0]+robotSenseRadius-tolerance,corners[2]-robotSenseRadius+tolerance);

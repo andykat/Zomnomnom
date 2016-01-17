@@ -100,12 +100,12 @@ public class Scout extends RobotRunner {
 					if ((rc.canSense(targetLocation) && !rc.onTheMap(targetLocation)) || !rc.canSense(targetLocation)){ //If you see it is not on the map
 						if (targetLocation.equals(potentialUpdate)){ //Is not cut off by the edges of the "known" world
 							senseMapEdges();
-							bugMove(rc.getLocation(), targetLocation);
+							marco.bugMove(rc, targetLocation);
 						}else{ //If the modified version is not the same, modify it
 							targetLocation= potentialUpdate;
 						}
 					}else if (rc.canSense(targetLocation) && rc.onTheMap(targetLocation)){ //if you see it and it is on the map
-						bugMove(rc.getLocation(), targetLocation);
+						marco.bugMove(rc, targetLocation);
 					}
 				}
 			}
