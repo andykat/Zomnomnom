@@ -39,8 +39,6 @@ public class Archon extends RobotRunner{
 		bestDir = bestDir(toArchonCenter);
 		
 		moving = false;
-		
-		System.out.println(rc.getID());
 	}
 	public void run() throws GameActionException{
 		if (rc.isCoreReady()){
@@ -66,6 +64,7 @@ public class Archon extends RobotRunner{
 		
 		//if there are enemies, change to kite state
 		if(enemies.length > 0) {
+			//alert distress!
             curStrat = strat.KITE;
             changeStrat();
             return;

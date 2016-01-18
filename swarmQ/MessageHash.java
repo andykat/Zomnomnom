@@ -1,4 +1,7 @@
 package swarmQ;
+
+import battlecode.common.GameConstants;
+
 /*
  * To use MessageHash:
  * Create MessageHash Object
@@ -13,9 +16,20 @@ package swarmQ;
  * To unhash the message, do unhashMessage(array of 2 integers)
  * 
  */
-public class MessageHash implements MessageHashConstants{
+public class MessageHash{
+	private int[][] mranges0 = {{1000,1000,100,50,100}, 
+			   {2,2,2},
+			   {12,12,12}
+			  };
+
+	private int[][] mranges1 = {{4,4,4,50,100,50,100},
+			   {2,2,2},
+			   {23,23,2}
+			  };
 	private int[] ranges0Product;
 	private int[] ranges1Product;
+	
+	private int maxX;
 	public MessageHash(){
 		ranges0Product = new int[mranges0.length];
 		ranges1Product = new int[mranges1.length];
@@ -29,6 +43,7 @@ public class MessageHash implements MessageHashConstants{
 				ranges1Product[i] *= mranges1[i][j];
 			}
 		}
+		maxX = 500 + GameConstants.MAP_MAX_WIDTH + 10;
 	}
 	
 	
@@ -97,4 +112,28 @@ public class MessageHash implements MessageHashConstants{
      	return rList;
      };
     
+    public int[] fastHash(int type, int x1, int y1, int x2, int y2){
+    	int m1 = type*maxX*maxX + x1*maxX + y1;
+    	int m2 = x2*maxX + y2;
+    	int[] ans = {m1,m2};
+    	return ans;
+    }
+    
+    public int fastHashType(int m1){
+    	return m1/maxX/maxX;
+    }
+    
+    public int[] fastUnHash(int[] m){
+    	int[] ans = new int[5];
+    	
+    	ans[0] = m[0]/maxX/maxX;
+    	m[0] -= ans[0]*maxX*maxX;
+    	m[1] = m[0]/maxX;
+    	m[2] = m[0]%maxX;
+    	
+    	m[3] = m[1]/maxX;
+    	m[4] = m[1]%maxX;
+    	
+    	return ans;
+    }
 }

@@ -106,5 +106,17 @@ public class MessageHash{
      	int[][] rList = {list0, list1};
      	return rList;
      };
+    public int[] fastHash1(int type, int x1, int y1){
+    	int m1 = type*600 + x1;
+    	int[] ans = {m1,y1};
+    	return ans;
+    }
+    
+    public int[] fastHash2(int type, int x1, int y1, int x2, int y2){
+    	int m1 = type*600*600 + x1*600 + y1;
+    	int m2 = x2*600 + y2;
+    	int[] ans = {m1,m2};
+    	return ans;
+    }
     
 }
