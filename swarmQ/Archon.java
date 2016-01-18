@@ -50,7 +50,7 @@ public class Archon extends RobotRunner{
 				
 			}
 			else if(curStrat == strat.KITE){
-				
+				ArchonKite();
 			}
 		}
 	}
