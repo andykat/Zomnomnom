@@ -45,6 +45,7 @@ public class Archon extends RobotRunner{
 	public void run() throws GameActionException{
 		if (rc.isCoreReady()){
 			rounds++;
+			readSignals();
 			if(curStrat == strat.MEANDER){
 				ArchonMeander();
 			}
@@ -154,5 +155,7 @@ public class Archon extends RobotRunner{
 	public void changeStrat(){
 		moving = false;
 	}
-	
+	public void readSignals(){
+		rc.emptySignalQueue();
+	}
 }
