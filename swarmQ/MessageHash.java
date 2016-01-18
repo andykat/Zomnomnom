@@ -128,11 +128,11 @@ public class MessageHash{
     	
     	ans[0] = m[0]/maxX/maxX;
     	m[0] -= ans[0]*maxX*maxX;
-    	m[1] = m[0]/maxX;
-    	m[2] = m[0]%maxX;
+    	ans[1] = m[0]/maxX;
+    	ans[2] = m[0]%maxX;
     	
-    	m[3] = m[1]/maxX;
-    	m[4] = m[1]%maxX;
+    	ans[3] = m[1]/maxX;
+    	ans[4] = m[1]%maxX;
     	
     	return ans;
     }

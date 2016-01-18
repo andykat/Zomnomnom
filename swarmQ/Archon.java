@@ -19,7 +19,10 @@ public class Archon extends RobotRunner{
 	private int rounds = 0;
 	private boolean moving;
 	private MapLocation dest;
-	private int locSignalRange = RobotType.ARCHON.sensorRadiusSquared*4; 
+	private int locSignalRange = RobotType.ARCHON.sensorRadiusSquared*4;
+	private int buildCount = 0;
+	private int broadcastRange = RobotType.ARCHON.sensorRadiusSquared*4;
+	//private RobotType spawnOrder = {RobotType.SOLDIER, RobotType.SOLDIER, RobotType.GUARD};
 	
 	public Archon(RobotController rcin) {
 		super(rcin);
@@ -37,6 +40,7 @@ public class Archon extends RobotRunner{
 		toArchonCenter = rc.getLocation().directionTo(new MapLocation(centerX/archLocs.length, centerY/archLocs.length));
 		spawnDir = spawnDir(toArchonCenter);
 		bestDir = bestDir(toArchonCenter);
+		
 		
 		moving = false;
 	}
@@ -65,6 +69,14 @@ public class Archon extends RobotRunner{
 		//if there are enemies, change to kite state
 		if(enemies.length > 0) {
 			//alert distress!
+			int [] message = enigma.fastHash(0, enemies[0].location.x, enemies[0].location.y, 0, 0);
+			try{
+				rc.broadcastMessageSignal(message[0], message[1], broadcastRange);
+				//rc.broadcastSignal(broadcastRange);
+			}
+			catch (GameActionException e) {
+				e.printStackTrace();
+			}
             curStrat = strat.KITE;
             changeStrat();
             return;
@@ -74,15 +86,27 @@ public class Archon extends RobotRunner{
 		
 		//spawn soldier in best location
 		if(rc.hasBuildRequirements(RobotType.SOLDIER)){
-			if(rc.canBuild(spawnDir[friends.length%9], RobotType.SOLDIER)){
-				rc.build(spawnDir[friends.length%9], RobotType.SOLDIER);
+			RobotType typeToBuild = RobotType.SOLDIER;
+			if(buildCount%3<2){
+				typeToBuild = RobotType.SOLDIER;
+			}
+			else{
+				typeToBuild = RobotType.GUARD;
+			}
+			if(buildCount%12 == 4){
+				typeToBuild = RobotType.SCOUT;
+			}
+			if(rc.canBuild(spawnDir[friends.length%9], typeToBuild)){
+				rc.build(spawnDir[friends.length%9], typeToBuild);
+				buildCount++;
 				return;
 			}
 			else{
 				for(int i=0;i<bestDir.length;i++){
-					if(rc.canBuild(bestDir[i], RobotType.SOLDIER)){
-						rc.build(bestDir[i], RobotType.SOLDIER);
-						rc.broadcastSignal(locSignalRange);
+					if(rc.canBuild(bestDir[i], typeToBuild)){
+						rc.build(bestDir[i], typeToBuild);
+						//rc.broadcastSignal(locSignalRange);
+						buildCount++;
 						return;
 					}
 				}
@@ -101,26 +125,32 @@ public class Archon extends RobotRunner{
 		
 		
 		if(rounds%8==0){
-			rc.broadcastSignal(locSignalRange);
+			//rc.broadcastSignal(locSignalRange);
 		}
 		
 		//if cannot spawn or find objectives, move with the group
 		if(!moving){
-			int vX=0;
-			int vY=0;
-			
 			int friendCheckN = min(friends.length, 8);
-			for(int i=0;i<friendCheckN;i++){
-				vX += friends[i].location.x;
-				vY += friends[i].location.y;
+			//check if there are units to follow
+			if(friendCheckN>0){
+				int vX=0;
+				int vY=0;
+				for(int i=0;i<friendCheckN;i++){
+					vX += friends[i].location.x;
+					vY += friends[i].location.y;
+				}
+				
+				vX /= friendCheckN;
+				vY /= friendCheckN;
+				
+				marco.swarmMoveStart();
+				dest = new MapLocation(vX, vY);
+				marco.swarmMove(rc, dest);
+				moving = true;
 			}
-			vX /= friendCheckN;
-			vY /= friendCheckN;
-			
-			marco.swarmMoveStart();
-			dest = new MapLocation(vX, vY);
-			marco.swarmMove(rc, dest);
-			moving = true;
+			else{
+				//search stuff by itself.
+			}
 		}
 		else{
 			int[] moveReturn = marco.swarmMove(rc, dest);

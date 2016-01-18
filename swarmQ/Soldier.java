@@ -26,7 +26,11 @@ public class Soldier extends RobotRunner{
 	private int randomLocationDistance = 10;
 	private int broadcastRange;
 	private MapLocation closestEnemyLoc;
+	private int closestEnemyID;
 	private int closestEnemyDist = 99999;
+	private double lastHealth = RobotType.SOLDIER.maxHealth;
+	private int steps=0;
+	private int stepLimit = 3;
 	public Soldier(RobotController rcin){
 		super(rcin);
 		curStrat = strat.MEANDER;
@@ -73,9 +77,9 @@ public class Soldier extends RobotRunner{
 			//enemy found. must kill
 			changeStrat();
 			//broadcast
-			int [] message = enigma.fastHash(0, enemies[0].location.x, enemies[0].location.y, 0, 0);
+			
 			try{
-				rc.broadcastMessageSignal(message[0], message[1], broadcastRange);
+				rc.broadcastSignal(broadcastRange);
 			}
 			catch (GameActionException e) {
 				e.printStackTrace();
@@ -85,6 +89,17 @@ public class Soldier extends RobotRunner{
 		
 		
 		RobotInfo[] friends = rc.senseNearbyRobots(RobotType.SOLDIER.sensorRadiusSquared, myTeam);
+		
+		/*for(int i=0;i<friends.length;i++){
+			if(friends[i].maxHealth > friends[i].health){
+				changeStrat();
+				closestEnemyLoc = friends[i].location;
+				closestEnemyID = friends[i].ID;
+				curStrat = strat.FIND_ENEMY;
+				return;
+			}
+		}*/
+		
 		if(!moving){
 			if(curLoc.distanceSquaredTo(archCenter)<RobotType.SOLDIER.sensorRadiusSquared || friends.length>8){
 				//move to random location
@@ -120,10 +135,60 @@ public class Soldier extends RobotRunner{
 	}
 	public void soldierCombat(){
 		MapLocation curLoc = rc.getLocation();
+		if(rc.getHealth()/RobotType.SOLDIER.maxHealth < 0.2 && rc.getHealth() < lastHealth){
+			RobotInfo[] friends = rc.senseNearbyRobots(RobotType.SOLDIER.sensorRadiusSquared, myTeam);
+			if(friends.length > 0 && friends.length < 8){
+				changeStrat();
+				
+				curStrat = strat.KITE;
+				steps = 0;
+				return;
+			}
+		}
+		lastHealth = rc.getHealth();
 		RobotInfo[] enemies = rc.senseHostileRobots(curLoc, RobotType.SOLDIER.sensorRadiusSquared);
         if(enemies.length > 0) {
-        
+        	double[] enemyVal = new double[enemies.length];
+        	for(int i=0;i<enemies.length;i++){
+        		double percentHealth = 1.0 - enemies[i].health/enemies[i].maxHealth;
+        		double distValue = 1.0;
+        		if(curLoc.distanceSquaredTo(enemies[i].location) > RobotType.SOLDIER.attackRadiusSquared){
+        			double dist = (double)(curLoc.distanceSquaredTo(enemies[i].location) - RobotType.SOLDIER.attackRadiusSquared);
+        			distValue -= 0.2;
+        			distValue -= dist/((double)RobotType.SOLDIER.attackRadiusSquared);
+        		}
+        		enemyVal[i] = percentHealth * distValue;
+        	}
+        	double max = enemyVal[0];
+        	int maxIndex = 0;
+        	for(int i=1;i<enemyVal.length;i++){
+        		if(enemyVal[i] > max){
+        			maxIndex = i;
+        			max = enemyVal[i];
+        		}
+        	}
+        	
+        	//if target is within attack range, then attack
+        	if(rc.canAttackLocation(enemies[maxIndex].location)){
+        		try{
+        			rc.attackLocation(enemies[maxIndex].location);
+        		}catch (GameActionException e) {
+    				e.printStackTrace();
+    			}
+        	}
+        	else{
+        		//move toward target
+        		marco.bugMove(rc, enemies[maxIndex].location);
+        	}
+        	
         }
+        else{
+        	//meander
+        	changeStrat();
+        	curStrat = strat.MEANDER;
+        }
+        
+        
 	}
 	public void soldierFindEnemy(){
 		readSignals();
@@ -137,10 +202,57 @@ public class Soldier extends RobotRunner{
 		}
 		
 		//move toward enemy
-		marco.bugMove(rc, closestEnemyLoc);
+		int dist = marco.bugMove(rc, closestEnemyLoc);
+		if(dist<3){
+			RobotInfo[] friends = rc.senseNearbyRobots(RobotType.SOLDIER.sensorRadiusSquared, myTeam);
+			/*for(int i=0;i<friends.length;i++){
+				if(friends[i].maxHealth > friends[i].health){
+					if(friends[i].ID != closestEnemyID){
+						changeStrat();
+						closestEnemyLoc = friends[i].location;
+						closestEnemyID = friends[i].ID;
+						curStrat = strat.FIND_ENEMY;
+						return;
+					}
+				}
+			}*/
+			//did not find any other friends that lost health. resume meandering
+			changeStrat();
+			curStrat = strat.MEANDER;
+		}
 	}
 	public void soldierKite(){
-	
+		RobotInfo[] enemies = rc.senseHostileRobots(rc.getLocation(), RobotType.ARCHON.sensorRadiusSquared);
+		try {
+			runawayMove(rc, enemies);
+		} catch (GameActionException e) {
+			e.printStackTrace();
+		}
+		steps++;
+		
+		if(steps>=stepLimit){
+			//no more enemies
+			if(enemies.length==0){
+				//RobotInfo[] friends = rc.senseNearbyRobots(RobotType.SOLDIER.sensorRadiusSquared, myTeam);
+				
+				/*for(int i=0;i<friends.length;i++){
+					if(friends[i].maxHealth > friends[i].health){
+						changeStrat();
+						closestEnemyLoc = friends[i].location;
+						closestEnemyID = friends[i].ID;
+						curStrat = strat.FIND_ENEMY;
+						return;
+					}
+				}*/
+				curStrat = strat.MEANDER;
+				changeStrat();
+				return;
+			}
+			else{
+				changeStrat();
+				curStrat = strat.COMBAT;
+			}
+		}
 	}
 	
 	public void readSignals(){
@@ -155,82 +267,36 @@ public class Soldier extends RobotRunner{
         		//if message is basic message
         		if(msg==null){
         			MapLocation ml = signals[i].getLocation();
-        			if(signals[i].getID() == nearArchonID){
-        				nearArchonLoc = ml;
-        				nearArchonLocDist = curLoc.distanceSquaredTo(ml);
+        			if(curStrat==strat.MEANDER || curStrat == strat.FIND_ENEMY){
+	        			if(curLoc.distanceSquaredTo(ml) < closestEnemyDist){
+							closestEnemyDist = curLoc.distanceSquaredTo(ml);
+							closestEnemyLoc = ml;
+							curStrat = strat.FIND_ENEMY;
+							//broadcast location to other meanderers
+							if(curStrat == strat.MEANDER){
+								try{
+									rc.broadcastSignal(broadcastRange);
+								}
+								catch (GameActionException e) {
+									e.printStackTrace();
+								}
+							}
+						}
         			}
-        			else{
-	        			int dist = curLoc.distanceSquaredTo(ml);
-	        			if(dist < nearArchonLocDist ){
-	        				nearArchonLocDist = dist;
-	        				nearArchonID = signals[i].getID();
-	        				nearArchonLoc = ml;
-	        			}
-        			}
+        			
         		}
         		//signal has message in it
         		else{
-        			//check for type
-        			int type = enigma.fastHashType(msg[0]);
         			
-        			//found enemy
-        			if(type == 0){
-        				if(curStrat==strat.MEANDER || curStrat == strat.FIND_ENEMY){
-        					int[] returnMsg = enigma.fastUnHash(msg);
-        					MapLocation tml = new MapLocation(returnMsg[1], returnMsg[2]);
-        					if(curLoc.distanceSquaredTo(tml) < closestEnemyDist){
-        						closestEnemyDist = curLoc.distanceSquaredTo(tml);
-        						closestEnemyLoc = tml;
-        						curStrat = strat.FIND_ENEMY;
-        						//broadcast location to other meanderers
-        						if(curStrat == strat.MEANDER){
-        							int [] message = enigma.fastHash(0, tml.x, tml.y, 0, 0);
-        							try{
-        								rc.broadcastMessageSignal(message[0], message[1], broadcastRange);
-        							}
-        							catch (GameActionException e) {
-        								e.printStackTrace();
-        							}
-        						}
-        					}
-        				}
-        			}
         		}
     		}
     	}
 	}
 	public void changeStrat(){
 		moving = false;
+		closestEnemyDist = 99999;
+	}
+	public void checkForHurtFriends(){
+		
 	}
 }
-//old moving code
-/*int friendCheckN = min(friends.length, 8);
-
-if(friendCheckN ==0){
-	dest = new MapLocation((2*curLoc.x - nearArchonLoc.x)*2, (2*curLoc.y - nearArchonLoc.y)*2);
-}
-else{
-	int indexSave = 0;
-	int maxdist = nearArchonLoc.distanceSquaredTo(friends[0].location);
-	for(int i=1;i<friendCheckN;i++){
-		if(nearArchonLoc.distanceSquaredTo(friends[i].location) > maxdist){
-			indexSave = i;
-			maxdist = nearArchonLoc.distanceSquaredTo(friends[i].location);
-		}
-	}
-	double dist = Math.sqrt((double)maxdist);
-	double fX = ((double)(curLoc.x - friends[indexSave].location.x))/dist;
-	double fY = ((double)(curLoc.y - friends[indexSave].location.y))/dist;
-	double adist = Math.sqrt((double)nearArchonLocDist);
-	double aX = ((double)(curLoc.x - nearArchonLoc.x))/adist;
-	double aY = ((double)(curLoc.y - nearArchonLoc.y))/adist;
-	
-	dest = new MapLocation(((int)((fX*friendVectorWeight + aX*archonVectorWeight)*vectorLength)) + curLoc.x, 
-			((int)((fY*friendVectorWeight + aY*archonVectorWeight)*vectorLength)) + curLoc.y);
-}
-
-
-moving = true;
-marco.swarmMoveStart();
-
-marco.swarmMove(rc, dest);*/

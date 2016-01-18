@@ -11,7 +11,7 @@ public class RobotPlayer  implements RobotConstants{
 		if (rc.getType().equals(RobotType.ARCHON)){
 			rr= new Archon(rc);
 		}else if (rc.getType().equals(RobotType.SCOUT)){
-			//rr= new Scout(rc);
+			rr= new Scout(rc);
 		}else if (rc.getType().equals(RobotType.GUARD)){
 			rr= new Guard(rc);
 		}else if (rc.getType().equals(RobotType.SOLDIER)){
