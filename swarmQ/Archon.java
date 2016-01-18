@@ -21,7 +21,7 @@ public class Archon extends RobotRunner{
 	private MapLocation dest;
 	private int locSignalRange = RobotType.ARCHON.sensorRadiusSquared*4;
 	private int buildCount = 0;
-	private int broadcastRange = RobotType.ARCHON.sensorRadiusSquared*4;
+	private int broadcastRange = RobotType.ARCHON.sensorRadiusSquared*3;
 	//private RobotType spawnOrder = {RobotType.SOLDIER, RobotType.SOLDIER, RobotType.GUARD};
 	
 	public Archon(RobotController rcin) {

@@ -1,4 +1,7 @@
 package swarmQ;
+import java.util.EnumMap;
+import java.util.Map;
+
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
@@ -32,6 +35,7 @@ public class Soldier extends RobotRunner{
 	private double lastHealth = RobotType.SOLDIER.maxHealth;
 	private int steps=0;
 	private int stepLimit = 3;
+	private Map<RobotType, Double> tasty = new EnumMap<RobotType, Double>(RobotType.class);
 	public Soldier(RobotController rcin){
 		super(rcin);
 		curStrat = strat.MEANDER;
@@ -48,6 +52,7 @@ public class Soldier extends RobotRunner{
 		}
 		archCenter = new MapLocation(centerX/archLocs.length, centerY/archLocs.length);
 		dest = archCenter;
+		initTasty();
 	}
 	public void run() throws GameActionException{
 		if (rc.isCoreReady()){
@@ -137,8 +142,8 @@ public class Soldier extends RobotRunner{
 	public void soldierCombat(){
 		MapLocation curLoc = rc.getLocation();
 		if(rc.getHealth()/RobotType.SOLDIER.maxHealth < 0.2 && rc.getHealth() < lastHealth){
-			RobotInfo[] friends = rc.senseNearbyRobots(RobotType.SOLDIER.sensorRadiusSquared, myTeam);
-			if(friends.length > 0 && friends.length < 8){
+			RobotInfo[] friends = rc.senseNearbyRobots(2, myTeam);
+			if(friends.length < 5){
 				changeStrat();
 				
 				curStrat = strat.KITE;
@@ -158,7 +163,7 @@ public class Soldier extends RobotRunner{
         			distValue -= 0.2;
         			distValue -= dist/((double)RobotType.SOLDIER.attackRadiusSquared);
         		}
-        		enemyVal[i] = percentHealth * distValue;
+        		enemyVal[i] = percentHealth * distValue * tasty.get(enemies[i].type);
         	}
         	double max = enemyVal[0];
         	int maxIndex = 0;
@@ -223,7 +228,7 @@ public class Soldier extends RobotRunner{
 		}
 	}
 	public void soldierKite(){
-		RobotInfo[] enemies = rc.senseHostileRobots(rc.getLocation(), RobotType.ARCHON.sensorRadiusSquared);
+		RobotInfo[] enemies = rc.senseHostileRobots(rc.getLocation(), RobotType.SOLDIER.sensorRadiusSquared);
 		try {
 			runawayMove(rc, enemies);
 		} catch (GameActionException e) {
@@ -275,14 +280,14 @@ public class Soldier extends RobotRunner{
 							closestEnemySignal = 1;
 							curStrat = strat.FIND_ENEMY;
 							//broadcast location to other meanderers
-							if(curStrat == strat.MEANDER){
+							/*if(curStrat == strat.MEANDER){
 								try{
 									rc.broadcastSignal(broadcastRange);
 								}
 								catch (GameActionException e) {
 									e.printStackTrace();
 								}
-							}
+							}*/
 						}
         			}
         			
@@ -316,6 +321,20 @@ public class Soldier extends RobotRunner{
 	}
 	public void checkForHurtFriends(){
 		
+	}
+	public void initTasty(){
+		tasty.put(RobotType.ARCHON, 0.05);
+		tasty.put(RobotType.BIGZOMBIE, 1.0);
+		tasty.put(RobotType.FASTZOMBIE, 1.0);
+		tasty.put(RobotType.GUARD, 1.0);
+		tasty.put(RobotType.RANGEDZOMBIE, 1.0);
+		tasty.put(RobotType.SCOUT, 0.5);
+		tasty.put(RobotType.SOLDIER, 1.0);
+		tasty.put(RobotType.STANDARDZOMBIE, 1.0);
+		tasty.put(RobotType.TTM, 0.5);
+		tasty.put(RobotType.TURRET, 2.0);
+		tasty.put(RobotType.VIPER, 2.0);
+		tasty.put(RobotType.ZOMBIEDEN, 0.05);	
 	}
 }
 //

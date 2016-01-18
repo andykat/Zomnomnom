@@ -1,5 +1,8 @@
 package swarmQ;
 
+import java.util.EnumMap;
+import java.util.Map;
+
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
@@ -32,6 +35,7 @@ public class Guard extends RobotRunner{
 	private double lastHealth = RobotType.GUARD.maxHealth;
 	private int steps=0;
 	private int stepLimit = 3;
+	private Map<RobotType, Double> tasty = new EnumMap<RobotType, Double>(RobotType.class);
 	public Guard(RobotController rcin){
 		super(rcin);
 		curStrat = strat.MEANDER;
@@ -48,6 +52,7 @@ public class Guard extends RobotRunner{
 		}
 		archCenter = new MapLocation(centerX/archLocs.length, centerY/archLocs.length);
 		dest = archCenter;
+		initTasty();
 	}
 	public void run() throws GameActionException{
 		if (rc.isCoreReady()){
@@ -137,8 +142,8 @@ public class Guard extends RobotRunner{
 	public void guardCombat(){
 		MapLocation curLoc = rc.getLocation();
 		if(rc.getHealth()/RobotType.GUARD.maxHealth < 0.2 && rc.getHealth() < lastHealth){
-			RobotInfo[] friends = rc.senseNearbyRobots(RobotType.GUARD.sensorRadiusSquared, myTeam);
-			if(friends.length > 0 && friends.length < 8){
+			RobotInfo[] friends = rc.senseNearbyRobots(2, myTeam);
+			if(friends.length < 5){
 				changeStrat();
 				
 				curStrat = strat.KITE;
@@ -155,10 +160,10 @@ public class Guard extends RobotRunner{
         		double distValue = 1.0;
         		if(curLoc.distanceSquaredTo(enemies[i].location) > RobotType.GUARD.attackRadiusSquared){
         			double dist = (double)(curLoc.distanceSquaredTo(enemies[i].location) - RobotType.GUARD.attackRadiusSquared);
-        			distValue -= 0.2;
+        			distValue -= 0.75;
         			distValue -= dist/((double)RobotType.GUARD.attackRadiusSquared);
         		}
-        		enemyVal[i] = percentHealth * distValue;
+        		enemyVal[i] = percentHealth * distValue * tasty.get(enemies[i].type);
         	}
         	double max = enemyVal[0];
         	int maxIndex = 0;
@@ -223,7 +228,7 @@ public class Guard extends RobotRunner{
 		}
 	}
 	public void guardKite(){
-		RobotInfo[] enemies = rc.senseHostileRobots(rc.getLocation(), RobotType.ARCHON.sensorRadiusSquared);
+		RobotInfo[] enemies = rc.senseHostileRobots(rc.getLocation(), RobotType.GUARD.sensorRadiusSquared);
 		try {
 			runawayMove(rc, enemies);
 		} catch (GameActionException e) {
@@ -313,5 +318,19 @@ public class Guard extends RobotRunner{
 	}
 	public void checkForHurtFriends(){
 		
+	}
+	public void initTasty(){
+		tasty.put(RobotType.ARCHON, 0.05);
+		tasty.put(RobotType.BIGZOMBIE, 3.0);
+		tasty.put(RobotType.FASTZOMBIE, 1.25);
+		tasty.put(RobotType.GUARD, 1.0);
+		tasty.put(RobotType.RANGEDZOMBIE, 1.25);
+		tasty.put(RobotType.SCOUT, 0.5);
+		tasty.put(RobotType.SOLDIER, 1.0);
+		tasty.put(RobotType.STANDARDZOMBIE, 1.25);
+		tasty.put(RobotType.TTM, 0.5);
+		tasty.put(RobotType.TURRET, 1.0);
+		tasty.put(RobotType.VIPER, 1.0);
+		tasty.put(RobotType.ZOMBIEDEN, 0.05);	
 	}
 }
