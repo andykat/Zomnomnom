@@ -47,6 +47,7 @@ public class Soldier extends RobotRunner{
                         currentMode = mode.RUN_AWAY;
                         break;
                     }
+
                     RobotInfo target = getBestTarget(RobotType.SOLDIER, enemies);
                     if(rc.isWeaponReady()) {
                         if(rc.canAttackLocation(target.location)) {

@@ -50,6 +50,7 @@ public class Archon extends RobotRunner {
 
             case MAKE_SOLDIERS:
                 
+
                 break;
 
 			case WAIT_FOR_BABY:
