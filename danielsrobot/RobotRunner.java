@@ -15,7 +15,7 @@ public class RobotRunner {
 	protected MapLocation eden;
 	protected Information memory;
 	protected int robotSenseRadius;
-	
+    protected Move move;	
 
     public RobotRunner(RobotController rcin){
 		this.rc= rcin;
@@ -29,6 +29,7 @@ public class RobotRunner {
 		}
 		eden= rc.getInitialArchonLocations(myTeam)[0];
 		memory= new Information(); //Everybody has a brain
+        move = new Move();
 		robotSenseRadius= (int) Math.sqrt(rc.getType().sensorRadiusSquared);
 	}
 	
@@ -66,8 +67,6 @@ public class RobotRunner {
             e.printStackTrace();
         }
 	}
-	
-	
 
 	public boolean simpleAttack() throws GameActionException{
 		boolean attacked= false;
@@ -163,7 +162,6 @@ public class RobotRunner {
 		return answer;
 	}
 	
-
 	public void shuffleDirArray(Direction[] ar)
 	  {
 	    for (int i = ar.length - 1; i > 0; i--)
@@ -206,4 +204,297 @@ public class RobotRunner {
 			rc.build(canBuildDir, rt);
 		}
 	}
+
+    public void runawayFrom(RobotInfo[] enemies) throws GameActionException{
+            MapLocation myLoc = rc.getLocation();
+            boolean canMove = false;
+            int[] zVec = awayFromZombies(enemies); 
+            int[] etVec = awayFromEnemyTeam(enemies);
+            int[] eVec = new int[2];
+            eVec[0] = zVec[0] + etVec[0];
+            eVec[1] = zVec[1] + etVec[1];
+            int[] cVec = awayFromCornersAndEnemies(eVec);
+
+            int dx = eVec[0] + cVec[0];
+            int dy = eVec[1] + cVec[1];
+            System.out.println("zombie dx: " + zVec[0] + " dy: " + zVec[1]);
+            System.out.println("enemy dx: " + eVec[0] + " dy: " + eVec[1]);
+            System.out.println("corner dx: " + cVec[0] + " dy: " + cVec[1]);
+            System.out.println("final dx: " + dx + " dy: " + dy);
+            System.out.println();
+            MapLocation targetLoc = myLoc.add(dx, dy);
+
+            move.bugMove(rc, targetLoc);
+    }
+
+    public int[] awayFromCornersAndEnemies(int[] eVec) {
+        MapLocation curLoc = rc.getLocation();
+        MapLocation[] sensibleLocs = MapLocation.getAllMapLocationsWithinRadiusSq(curLoc, rc.getType().sensorRadiusSquared);
+        int dx = 0;
+        int dy = 0;
+        int count = 0;
+        for(MapLocation loc : sensibleLocs) {
+            try{
+                if(!rc.onTheMap(loc)) {
+                    if(curLoc.x == loc.x || curLoc.y == loc.y) {
+                        int wallX = curLoc.x - loc.x;
+                        int wallY = curLoc.y - loc.y;
+                            dx += wallX; 
+                            dy += wallY;
+                    }
+                }
+            } 
+            catch(GameActionException e) {
+
+            }
+        }
+        System.out.println("out of bounds = " + count);
+        int[] vector = {dx, dy};
+        return vector;
+    }
+
+    public int[] getMaxSensibleXY() {
+        int r = rc.getType().sensorRadiusSquared;
+        int x=0, y=0, max = 0;
+        
+        for(int i=0; i < Math.sqrt(r); i++) {
+            for(int j=0; j < Math.sqrt(r); j++) {
+                int a = i*i + j*j;
+                if((a <= r) && a > max) {
+                    x = i;
+                    y = j;
+                    max = a;
+                }
+            }
+        }
+        int[] xy = {x, y};
+        return xy;
+    }
+
+    // 1 = right rotate
+    // 0 = u fucked
+    // -1 = left rotate
+    public int optimalRotation(Direction dir, RobotInfo[] enemies) {
+        MapLocation curLoc = rc.getLocation();
+        MapLocation[] sensibleLoc = null;
+        int[] center = getMaxSensibleXY();
+        int halfRadiusSquared = (int) Math.pow(Math.floor((Math.sqrt(rc.getType().sensorRadiusSquared)/2)), 2);
+        // MapLocation.getAllMapLocationsWithinRadiusSq(curLoc.add(), rc.getType().sensorRadiusSquared);
+        if(dir == Direction.NORTH_EAST) {
+            sensibleLoc = MapLocation.getAllMapLocationsWithinRadiusSq(curLoc.add(center[0], -center[1]), halfRadiusSquared);
+            if(sensibleLoc.length < 4) {
+                return -1;
+            }
+        }
+        else if(dir == Direction.NORTH_WEST) {
+            sensibleLoc = MapLocation.getAllMapLocationsWithinRadiusSq(curLoc.add(-center[0], -center[1]), halfRadiusSquared);
+            if(sensibleLoc.length < 4) {
+                return 1;
+            }
+        }
+        else if(dir == Direction.SOUTH_WEST) {
+            sensibleLoc = MapLocation.getAllMapLocationsWithinRadiusSq(curLoc.add(-center[0], center[1]), halfRadiusSquared);
+            if(sensibleLoc.length < 4) {
+                return -1;
+            }
+        }
+        else if(dir == Direction.SOUTH_EAST) {
+            sensibleLoc = MapLocation.getAllMapLocationsWithinRadiusSq(curLoc.add(center[0], center[1]), halfRadiusSquared);
+            if(sensibleLoc.length < 4) {
+                return 1;
+            }
+        }
+        else if(dir == Direction.NORTH) {
+            sensibleLoc = MapLocation.getAllMapLocationsWithinRadiusSq(curLoc.add(0, -center[1]), halfRadiusSquared);
+            if(sensibleLoc.length < 4) {
+                return 1;
+            }
+        }
+        else if(dir == Direction.EAST) {
+            sensibleLoc = MapLocation.getAllMapLocationsWithinRadiusSq(curLoc.add(center[0], 0), halfRadiusSquared);
+            if(sensibleLoc.length < 4) {
+                return 1;
+            }
+        }
+        else if(dir == Direction.SOUTH) {
+            sensibleLoc = MapLocation.getAllMapLocationsWithinRadiusSq(curLoc.add(0, center[1]), halfRadiusSquared);
+            if(sensibleLoc.length < 4) {
+                return 1;
+            }
+        }
+        else if(dir == Direction.WEST) {
+            sensibleLoc = MapLocation.getAllMapLocationsWithinRadiusSq(curLoc.add(-center[0], 0), halfRadiusSquared);
+            if(sensibleLoc.length < 4) {
+                return 1;
+            }
+        }
+        else {
+            return 1;
+        }
+
+        ArrayList<Rubble> rubbles = new ArrayList<Rubble>();
+        for(MapLocation loc : sensibleLoc) {
+            if(!rc.canSense(loc)) {
+                int dx = loc.x - curLoc.x;
+                int dy = loc.y - curLoc.y;
+
+                if(!rc.canSense(curLoc.add(dx, dy))) {
+                    if(!rc.canSense(curLoc.add(dx, 0))) {
+                        if((dx > 0 && dy > 0) || (dx < 0 && dy < 0)) {
+                            return 1;
+                        }
+                        else {
+                            return -1;
+                        }
+                    }
+                    else if(!rc.canSense(curLoc.add(0, dy))){
+                        if((dx > 0 && dy > 0) || (dx < 0 && dy < 0)) {
+                            return -1;
+                        }
+                        else {
+                            return 1;
+                        }
+                    }
+                } // end of avoiding map edges
+
+                else {
+                    double amount = rc.senseRubble(loc);
+                    if(amount > 0) {
+                        rubbles.add(new Rubble(loc, amount));
+                    }
+                }
+            }
+        }
+
+        int obstacleX = 0;
+        int obstacleY = 0;
+
+        for(Rubble rubble : rubbles) {
+            int xLoc = rubble.getLocation().x;
+            int yLoc = rubble.getLocation().y;
+            if(rubble.getAmount() < 100) {
+            }
+        }
+
+        return 1;
+    }
+
+    public int[] awayFromZombies(RobotInfo[] enemies) throws GameActionException {
+        int dx = 0, dy = 0;
+        int multiplier = 1; // repulsion force multiplier
+        MapLocation myLoc = rc.getLocation();
+
+        for(RobotInfo r : enemies) {
+            MapLocation enemyLoc = r.location;
+            if(r.type == RobotType.BIGZOMBIE) {
+                multiplier = 1;
+            }
+            else {
+                multiplier = 1;
+            }
+            dx += multiplier * (myLoc.x - enemyLoc.x);
+            dy += multiplier * (myLoc.y - enemyLoc.y);
+        } 
+        int[] vector = {dx, dy};
+        return vector;
+
+        /*
+        Direction away = myLoc.directionTo(runVector);
+        if(away == Direction.NORTH) {
+            if(dx < 0) {
+                away = Direction.NORTH_WEST;
+            } else {
+                away = Direction.NORTH_EAST;
+            }
+        }
+        else if(away == Direction.SOUTH) {
+            if(dx < 0) {
+                away = Direction.SOUTH_WEST;
+            }
+            else {
+                away = Direction.SOUTH_EAST;
+            }
+        }
+        else if(away == Direction.EAST) {
+            if(dy < 0) {
+                away = Direction.NORTH_EAST;
+            }
+            else {
+                away = Direction.SOUTH_EAST;
+            }
+        }
+        else if(away == Direction.WEST) {
+            if(dy < 0) {
+                away = Direction.NORTH_WEST;
+            }
+            else {
+                away = Direction.SOUTH_WEST;
+            }
+        }
+        return runVector;
+        */
+    }
+
+    public int[] awayFromEnemyTeam(RobotInfo[] enemies) {
+        int dx = 0, dy = 0;
+        int multiplier = 1; // repulsion force multiplier
+        MapLocation myLoc = rc.getLocation();
+        Team enemyTeam = rc.getTeam().opponent();
+
+        for(RobotInfo r : enemies) {
+            if(r.team == enemyTeam) {
+                MapLocation enemyLoc = r.location;
+                if(willDieInTurns(enemies, 10)) {
+                    multiplier = -1;  // hella move towards them
+                } 
+                else {
+                    multiplier = 1;     // get the f away from them
+                }
+                dx += multiplier * (myLoc.x - enemyLoc.x);
+                dy += multiplier * (myLoc.y - enemyLoc.y);
+            }
+        }
+        int[] vector = {dx, dy};
+        return vector;
+
+    }
+
+    public boolean willDieInTurns(RobotInfo[] enemies, int turns) {
+        double totaldmg = 0.0;
+
+        for(RobotInfo r : enemies) {
+            totaldmg += (turns / r.weaponDelay * r.attackPower);
+        }
+        
+        if(rc.getHealth() < totaldmg) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public RobotInfo getBestTarget(RobotType type, RobotInfo[] enemies) {
+        RobotInfo target = null;
+        MapLocation myLoc = rc.getLocation();
+
+        if(type == RobotType.SOLDIER) {
+            double maxBounty = 0;
+            for(RobotInfo e : enemies) {
+                double missingHP = 1 - (e.health / e.maxHealth);
+                int dx = e.location.x - myLoc.x; 
+                int dy = e.location.y - myLoc.y;
+                int dSq = dx*dx + dy*dy;
+                
+                // bounty = (tasty) * (% missing health of enemy) * ((1-(distance of enemy / sightrange))^constant)
+                double bounty = 1 * missingHP * ((1 - dSq/type.sensorRadiusSquared)^1);
+                if(bounty > maxBounty) {
+                    maxBounty = bounty;
+                    target = e;
+                }
+            }
+        }
+
+        return target;
+    }
+
 }
