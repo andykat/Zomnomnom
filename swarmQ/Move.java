@@ -1,4 +1,4 @@
-package move_v1;
+package swarmQ;
 
 import battlecode.common.Direction;
 import battlecode.common.MapLocation;
@@ -19,7 +19,7 @@ public class Move {
 		}
 		steps = 0;
 	}
-	public int swarmMove(RobotController rc, MapLocation end){
+	public int[] swarmMove(RobotController rc, MapLocation end){
 		try {
 			MapLocation curLoc = rc.getLocation();
 			int dist = curLoc.distanceSquaredTo(end);
@@ -56,11 +56,14 @@ public class Move {
 							}
 							else{
 								//Blocked by neutral robot
-								return 99999;
+								int[] r = {99999,steps}; 
+								return r;
 							}
 						}
 					}
-					return dist;
+					steps++;
+					int[] r = {dist,steps}; 
+					return r;
 				}
 			}
 			
@@ -86,7 +89,9 @@ public class Move {
 						prevDistance[j] = prevDistance[j-1];
 					}
 					prevDistance[0] = dist;
-					return dist;
+					steps++;
+					int[] r = {dist,steps}; 
+					return r;
 				}
 			}
 			else{
@@ -102,13 +107,16 @@ public class Move {
 						}
 					}
 				}
-				return dist;
+				steps++;
+				int[] r = {dist,steps}; 
+				return r;
 			}
 		} catch (Exception e) {
             System.out.println(e.getMessage());
             e.printStackTrace();
         }
-		return 99999;
+		int[] r = {99999,steps}; 
+		return r;
 	}
 	public int bugMove(RobotController rc, MapLocation end){
 		try {
