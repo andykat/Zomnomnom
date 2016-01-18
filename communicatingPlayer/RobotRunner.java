@@ -35,13 +35,15 @@ public class RobotRunner {
 	}
 	
 	public void randomMove() throws GameActionException{
-		Direction[] alldirs= Direction.values();
-		Direction answer= null;
-		Utility.shuffleDirArray(alldirs);
-		for (int n= 0; n< alldirs.length; n++){
-			if (rc.canMove(alldirs[n])){
-				rc.move(alldirs[n]);
-				break;
+		if (rc.isCoreReady()){
+			Direction[] alldirs= Direction.values();
+			Direction answer= null;
+			Utility.shuffleDirArray(alldirs);
+			for (int n= 0; n< alldirs.length; n++){
+				if (rc.canMove(alldirs[n])){
+					rc.move(alldirs[n]);
+					break;
+				}
 			}
 		}
 	}
@@ -49,11 +51,13 @@ public class RobotRunner {
 	public void run() throws GameActionException{
 		//Can write here a general case so all non-specified class can do something
 		if (rc.isCoreReady()){
+			if (rc.getType().equals(RobotType.TURRET))
+				rc.pack();
 			if (rc.getType().canAttack()){
 				if (randall.nextBoolean()== false){
 					randomMove();
 				}else{
-					simpleAttack();
+					//simpleAttack();
 				}
 			}else{
 				randomMove();
@@ -70,6 +74,7 @@ public class RobotRunner {
 	}
 	
 	protected void forwardish(Direction ahead) throws GameActionException{
+		//System.out.println(ahead);
 		for (int i: RobotConstants.posDirs){
 			Direction candidateDir= Direction.values()[(ahead.ordinal()+i+8)%8];
 			if (rc.canMove(candidateDir)){
@@ -111,8 +116,8 @@ public class RobotRunner {
 	protected boolean simpleAttack() throws GameActionException{
 		boolean attacked= false;
 	     if (rc.getType().canAttack()) {
-             RobotInfo[] enemiesWithinRange = rc.senseNearbyRobots(rc.getType().attackRadiusSquared, enemyTeam);
-             RobotInfo[] zombiesWithinRange = rc.senseNearbyRobots(rc.getType().attackRadiusSquared, Team.ZOMBIE);
+             RobotInfo[] enemiesWithinRange = rc.senseNearbyRobots(rc.getType().attackRadiusSquared-1, enemyTeam);
+             RobotInfo[] zombiesWithinRange = rc.senseNearbyRobots(rc.getType().attackRadiusSquared-1, Team.ZOMBIE);
              if (enemiesWithinRange.length > 0) {
                  if (rc.isWeaponReady()) {
                      rc.attackLocation(enemiesWithinRange[randall.nextInt(enemiesWithinRange.length)].location);
@@ -197,7 +202,7 @@ public class RobotRunner {
 	
 	protected MapLocation temperLocation(MapLocation loc){
 		int[] corners= memory.getCorners();		
-		int tolerance= 2;
+		int tolerance= 2; //What if person spawn on edge?
 		
 		int x= Utility.clamp(loc.x,corners[0]+robotSenseRadius-tolerance,corners[2]-robotSenseRadius+tolerance);
 		int y= Utility.clamp(loc.y,corners[1]+robotSenseRadius-tolerance,corners[3]-robotSenseRadius+tolerance);
@@ -207,17 +212,16 @@ public class RobotRunner {
 	
 	protected void senseMapEdges() throws GameActionException{ //THE CROSS IS ALWAYS MORE POWERFUL, diagonals quite useless
 		//When the checked point turns from off the map to on the map, that is the value
-		rc.setIndicatorString(0, "sense map edge");
 		boolean prevOffMap= false;
 		
 		for (int x= -robotSenseRadius; x< 0; x++){ //Check to yourself
 			MapLocation check= rc.getLocation().add(x, 0);
+			Direction dir= rc.getLocation().directionTo(check); //Because if it's on the character himself you can't get a direction
 			if (rc.canSense(check)){
 				if (!rc.onTheMap(check)){
 					prevOffMap= true;
 				}else if (prevOffMap && rc.onTheMap(check)){
-					Direction scan= rc.getLocation().directionTo(check);
-					memory.addCornerValueCandidate(scan, check); //You add the direction of your check and the corresponding map location when the map first comes on grid
+					memory.addCornerValueCandidate(dir, check); //You add the direction of your check and the corresponding map location when the map first comes on grid
 					rc.setIndicatorDot(check, 0, 255, 0);
 					rc.setIndicatorLine(rc.getLocation(), check, 0, 255, 0);
 					break ;
@@ -228,15 +232,14 @@ public class RobotRunner {
 		prevOffMap= false;
 		for (int x= robotSenseRadius; x> 0; x--){
 			MapLocation check= rc.getLocation().add(x,0);
-			rc.setIndicatorString(1, "CHECK: "+ check.toString());
+			Direction dir= rc.getLocation().directionTo(check); //Because if it's on the character himself you can't get a direction
 			if (rc.canSense(check)){
 				if (!rc.onTheMap(check)){
 					prevOffMap= true;
 				}else if (prevOffMap && rc.onTheMap(check)){
 					rc.setIndicatorDot(check, 0, 255, 0);
 					rc.setIndicatorLine(rc.getLocation(), check, 0, 255, 0);
-					Direction scan= rc.getLocation().directionTo(check);
-					memory.addCornerValueCandidate(scan, check);
+					memory.addCornerValueCandidate(dir, check);
 					break;
 				}
 			}
@@ -245,14 +248,14 @@ public class RobotRunner {
 		prevOffMap= false;
 		for (int y= -robotSenseRadius; y< 0; y++){
 			MapLocation check= rc.getLocation().add(0,y);
+			Direction dir= rc.getLocation().directionTo(check); //Because if it's on the character himself you can't get a direction
 			if (rc.canSense(check)){
 				if (!rc.onTheMap(check)){ //If the checked position is not on the map
 					prevOffMap= true;
 				}else if (prevOffMap && rc.onTheMap(check)){ //if the previously checked position is not on the map, and the current on is
 					rc.setIndicatorDot(check, 0, 255, 0);
 					rc.setIndicatorLine(rc.getLocation(), check, 0, 255, 0);
-					Direction scan= rc.getLocation().directionTo(check);
-					memory.addCornerValueCandidate(scan, check);
+					memory.addCornerValueCandidate(dir, check);
 					break;
 				}
 			}
@@ -261,14 +264,14 @@ public class RobotRunner {
 		prevOffMap= false;
 		for (int y= robotSenseRadius; y> 0; y--){
 			MapLocation check= rc.getLocation().add(0,y);
+			Direction dir= rc.getLocation().directionTo(check); //Because if it's on the character himself you can't get a direction
 			if (rc.canSense(check)){
 				if (!rc.onTheMap(check)){
 					prevOffMap= true;
 				}else if (prevOffMap && rc.onTheMap(check)){
 					rc.setIndicatorDot(check, 0, 255, 0);
 					rc.setIndicatorLine(rc.getLocation(), check, 0, 255, 0);
-					Direction scan= rc.getLocation().directionTo(check);
-					memory.addCornerValueCandidate(scan, check);
+					memory.addCornerValueCandidate(dir, check);
 					break;
 				}
 			}

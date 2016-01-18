@@ -10,4 +10,5 @@ public interface RobotConstants {
 	//12 possible robot types
 	public static enum mapTypes {RUBBLE, ZOMBIE_DEN, PARTS};
 	public static int[] posDirs= new int[]{0,1,-1,2,-2,3,-3,4};
+	public static int patienceMultiplier= 20;
 }
