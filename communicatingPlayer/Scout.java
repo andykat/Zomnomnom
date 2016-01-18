@@ -112,16 +112,33 @@ public class Scout extends RobotRunner {
 						memory.clearObjectives();
 					}
 				}else{ //End condition of the search
-					rc.setIndicatorDot(targetObjLoc, 255, 245, 238);
 					if (rc.canSense(targetObjLoc)){
 						gatherMapInfo(targetObjLoc);
+						//rc.setIndicatorString(0, "Objective value: " + memory.getMapLocValue(targetObjLoc, rc));
 						if (memory.getMapLocValue(targetObjLoc, rc)<= 0){ //If value less than or equal to zero means the objective is over
 							memory.clearObjective(targetObjLoc);
 							targetObjLoc= null;
 						}else{
-							if (rc.getLocation().distanceSquaredTo(targetObjLoc) > 9){
-								rc.setIndicatorString(1, "see it, only moving loser");
-								marco.bugMove(rc, targetObjLoc);
+							rc.setIndicatorLine(rc.getLocation(), targetObjLoc, 255, 0, 255);
+							rc.setIndicatorDot(targetObjLoc, 255, 0, 255);
+							if (rc.getLocation().distanceSquaredTo(targetObjLoc) > 2){
+								int moveVal= marco.bugMove(rc, targetObjLoc);
+							}else{ //if you are close enough
+								RobotInfo checkRobot= rc.senseRobotAtLocation(targetObjLoc);
+								if (checkRobot!= null){
+									if (rc.senseRobotAtLocation(targetObjLoc).team.equals(Team.NEUTRAL)){
+										rc.activate(targetObjLoc);
+									}
+									if (rc.senseRobotAtLocation(targetObjLoc).team.equals(RobotType.ZOMBIEDEN)){
+										memory.clearObjective(targetObjLoc);
+									}
+								}else{ //Try to move on top of a goody?
+									int moveVal= marco.bugMove(rc, targetObjLoc);
+									if (rc.getLocation().equals(targetObjLoc)){//It's probably a part
+										gatherPartInfo();
+									}
+									
+								}
 							}
 						}
 					}else{ //If you can't sense it, keep moving towards it, this is already (hopefully) the best goal with distance considered

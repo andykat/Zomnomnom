@@ -21,6 +21,7 @@ public class RobotRunner {
 	protected Information memory;
 	protected int robotSenseRadius;
 	protected Move marco;
+	private RobotInfo targetRobot;
 
 	public RobotRunner(RobotController rcin){
 		this.rc= rcin;
@@ -29,7 +30,7 @@ public class RobotRunner {
 		enemyTeam= myTeam.opponent();
 		eden= rc.getInitialArchonLocations(myTeam)[0];
 		memory= new Information(); //Everybody has a brain
-		robotSenseRadius= (int) Math.sqrt(rc.getType().sensorRadiusSquared);
+		robotSenseRadius= (int) Math.round(Math.sqrt(rc.getType().sensorRadiusSquared)); //Account for rounding differences
 		marco= new Move();
 	}
 	
@@ -241,22 +242,33 @@ public class RobotRunner {
 		}
 	}
 	
+	protected void gatherPartInfo(){
+		MapLocation[] partsLoc= rc.sensePartLocations(rc.getType().sensorRadiusSquared);
+		for (int n= 0; n< partsLoc.length; n++){
+			memory.addMapInfo(partsLoc[n], (int)rc.senseParts(partsLoc[n]),RobotConstants.mapTypes.PARTS);
+		}
+	}
+	
 	protected void gatherMapInfo(MapLocation targetObjLoc) throws GameActionException{ //This is for a single place, used for rescue updates
 		if (rc.canSense(targetObjLoc)){
-			RobotInfo targetRobot= rc.senseRobotAtLocation(targetObjLoc);
+			targetRobot = rc.senseRobotAtLocation(targetObjLoc);
 			if (targetRobot!= null){
 				if (targetRobot.team.equals(Team.NEUTRAL)){//IS a neutral robot
 					memory.addNeutralRobotMapInfo(targetObjLoc, targetRobot);
 				}else if (targetRobot.team.equals(Team.ZOMBIE)){
 					memory.addMapInfo(targetObjLoc, (int)targetRobot.health, RobotConstants.mapTypes.ZOMBIE_DEN);
+				}else if (targetRobot.team.equals(myTeam) || targetRobot.team.equals(enemyTeam)){
+					memory.addNeutralRobotMapInfo(targetObjLoc, null); //If converted or stolen, either way
 				}
+			}else{
+				memory.addNeutralRobotMapInfo(targetObjLoc, null);//For when there are no longer robots there
 			}
 			memory.addMapInfo(targetObjLoc, (int) rc.senseRubble(targetObjLoc), RobotConstants.mapTypes.RUBBLE);
 			memory.addMapInfo(targetObjLoc, (int) rc.senseParts(targetObjLoc), RobotConstants.mapTypes.PARTS);
 		}
 	}
 	
-	protected void gatherMapInfo() throws GameActionException{
+	protected void gatherMapInfo() throws GameActionException{ //Only checks what is there; if it no longer exists it will be found out by the more stringent search up top
 		rc.setIndicatorString(0, "Sensing");
 		RobotInfo[] enemyRobotsInRange = rc.senseNearbyRobots(rc.getType().sensorRadiusSquared, Team.ZOMBIE);
 		for (int n= 0; n< enemyRobotsInRange.length; n++){
@@ -275,6 +287,7 @@ public class RobotRunner {
 			memory.addMapInfo(partsLoc[n], (int)rc.senseParts(partsLoc[n]),RobotConstants.mapTypes.PARTS);
 		}
 		 
+		//If you are stopping to search, sometimes it is better to get as much as you can
 		for (int x= -robotSenseRadius/(int)Math.sqrt(2)+rc.getLocation().x; x< robotSenseRadius/(int)Math.sqrt(2)+rc.getLocation().x; x++){
 			for (int y= -robotSenseRadius/(int)Math.sqrt(2)+rc.getLocation().y; y< robotSenseRadius/(int)Math.sqrt(2)+rc.getLocation().y; y++){
 				MapLocation underView= new MapLocation(x,y);
@@ -286,5 +299,6 @@ public class RobotRunner {
 				}
 			 }
 		 }
+		
 	}
 }
