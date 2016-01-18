@@ -11,7 +11,6 @@ import battlecode.common.RobotType;
 import battlecode.common.Team;
 
 
-import danielsrobot.Rubble;
 
 public class RobotRunner {
 	protected RobotController rc;
@@ -23,6 +22,7 @@ public class RobotRunner {
 	protected Information memory;
 	protected int robotSenseRadius;
 	protected Move marco;
+	protected MessageHash enigma;
 
 	public RobotRunner(RobotController rcin){
 		this.rc= rcin;
@@ -33,6 +33,7 @@ public class RobotRunner {
 		memory= new Information(); //Everybody has a brain
 		robotSenseRadius= (int) Math.sqrt(rc.getType().sensorRadiusSquared);
 		marco= new Move();
+		enigma = new MessageHash();
 	}
 	
 	public void run() throws GameActionException{
@@ -340,7 +341,7 @@ public class RobotRunner {
 	        dy += multiplier * (myLoc.y - enemyLoc.y);
 	    } 
 	    int[] vector = {dx, dy};
-	    System.out.println("zombies dx: " + dx + " dy: " + dy);
+	    //System.out.println("zombies dx: " + dx + " dy: " + dy);
 	    return vector;
 	}
 	
@@ -363,7 +364,7 @@ public class RobotRunner {
 	            dy += multiplier * (myLoc.y - enemyLoc.y);
 	        }
 	    }
-	    System.out.println("enemies dx: " + dx + " enemies dy: " + dy);
+	    //System.out.println("enemies dx: " + dx + " enemies dy: " + dy);
 	    int[] vector = {dx, dy};
 	    return vector;
 	

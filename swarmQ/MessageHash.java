@@ -1,7 +1,4 @@
 package swarmQ;
-
-import communicatingPlayer.MessageHashConstants;
-
 /*
  * To use MessageHash:
  * Create MessageHash Object

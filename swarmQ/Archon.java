@@ -16,8 +16,10 @@ public class Archon extends RobotRunner{
 	private Direction[] bestDir;
 	private MapLocation curLoc;
 	private int stepsN = 6;
+	private int rounds = 0;
 	private boolean moving;
 	private MapLocation dest;
+	private int locSignalRange = RobotType.ARCHON.sensorRadiusSquared*4; 
 	
 	public Archon(RobotController rcin) {
 		super(rcin);
@@ -37,9 +39,12 @@ public class Archon extends RobotRunner{
 		bestDir = bestDir(toArchonCenter);
 		
 		moving = false;
+		
+		System.out.println(rc.getID());
 	}
 	public void run() throws GameActionException{
 		if (rc.isCoreReady()){
+			rounds++;
 			if(curStrat == strat.MEANDER){
 				ArchonMeander();
 			}
@@ -77,6 +82,7 @@ public class Archon extends RobotRunner{
 				for(int i=0;i<bestDir.length;i++){
 					if(rc.canBuild(bestDir[i], RobotType.SOLDIER)){
 						rc.build(bestDir[i], RobotType.SOLDIER);
+						rc.broadcastSignal(locSignalRange);
 						return;
 					}
 				}
@@ -94,7 +100,9 @@ public class Archon extends RobotRunner{
 		/////////////////////////////////////////////
 		
 		
-		
+		if(rounds%8==0){
+			rc.broadcastSignal(locSignalRange);
+		}
 		
 		//if cannot spawn or find objectives, move with the group
 		if(!moving){
