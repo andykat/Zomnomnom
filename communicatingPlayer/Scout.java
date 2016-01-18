@@ -89,7 +89,7 @@ public class Scout extends RobotRunner {
 					if ((rc.canSense(targetNodeLoc) && !rc.onTheMap(targetNodeLoc)) || !rc.canSense(targetNodeLoc)){ //If you see it is not on the map
 						if (targetNodeLoc.equals(potentialUpdate)){ //Is not cut off by the edges of the "known" world
 							senseMapEdges();
-							marco.bugMove(rc, targetNodeLoc);
+							int moveVal= marco.bugMove(rc, targetNodeLoc);
 						}else{ //If the modified version is not the same, modify it
 							targetNodeLoc= potentialUpdate;
 						}
@@ -115,25 +115,33 @@ public class Scout extends RobotRunner {
 					if (rc.canSense(targetObjLoc)){
 						gatherMapInfo(targetObjLoc);
 						//rc.setIndicatorString(0, "Objective value: " + memory.getMapLocValue(targetObjLoc, rc));
-						if (memory.getMapLocValue(targetObjLoc, rc)<= 0){ //If value less than or equal to zero means the objective is over
+						if (memory.getMapLocValue(targetObjLoc, rc)<= 0){ //If value less than or equal to zero means the objective is over (i.e. could have been collected)
 							memory.clearObjective(targetObjLoc);
-							targetObjLoc= null;
+							targetObjLoc= memory.getObjective(rc);
+							if (!(memory.getMapLocValue(targetObjLoc, rc) > 0)){
+								memory.clearObjectives();
+							}
 						}else{
 							rc.setIndicatorLine(rc.getLocation(), targetObjLoc, 255, 0, 255);
 							rc.setIndicatorDot(targetObjLoc, 255, 0, 255);
 							if (rc.getLocation().distanceSquaredTo(targetObjLoc) > 2){
 								int moveVal= marco.bugMove(rc, targetObjLoc);
+								if (moveVal > 90000){
+									forwardish(rc.getLocation().directionTo(targetObjLoc));
+								}
 							}else{ //if you are close enough
 								RobotInfo checkRobot= rc.senseRobotAtLocation(targetObjLoc);
 								if (checkRobot!= null){
 									if (rc.senseRobotAtLocation(targetObjLoc).team.equals(Team.NEUTRAL)){
-										rc.activate(targetObjLoc);
+											if (rc.getType().equals(RobotType.ARCHON))
+												rc.activate(targetObjLoc);
 									}
 									if (rc.senseRobotAtLocation(targetObjLoc).team.equals(RobotType.ZOMBIEDEN)){
 										memory.clearObjective(targetObjLoc);
 									}
 								}else{ //Try to move on top of a goody?
 									int moveVal= marco.bugMove(rc, targetObjLoc);
+									//forwardish(rc.getLocation().directionTo(targetObjLoc));
 									if (rc.getLocation().equals(targetObjLoc)){//It's probably a part
 										gatherPartInfo();
 									}

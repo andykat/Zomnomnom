@@ -9,4 +9,5 @@ public interface RobotConstants {
 	public static RobotType[] posNRobotTypes= {null,RobotType.ARCHON,RobotType.SCOUT, RobotType.SOLDIER, RobotType.GUARD, RobotType.VIPER, RobotType.TURRET, RobotType.TTM, RobotType.STANDARDZOMBIE, RobotType.RANGEDZOMBIE,RobotType.FASTZOMBIE, RobotType.BIGZOMBIE};
 	//12 possible robot types
 	public static enum mapTypes {RUBBLE, ZOMBIE_DEN, PARTS};
+	public static int[] posDirs= new int[]{0,1,-1,2,-2,3,-3,4};
 }

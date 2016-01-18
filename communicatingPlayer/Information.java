@@ -83,7 +83,7 @@ public class Information { //http://stackoverflow.com/questions/683041/java-how-
 					rc.setIndicatorString(1, "Robot int type: "+ info[3]);
 					//rc.setIndicatorString(2, "Nuetral robot value added?" + rc.getRoundNum());
 				}		
-			value= (float) (value * (rc.getLocation().distanceSquaredTo(objLoc)*1.0/GameConstants.MAP_MAX_HEIGHT)); //multiplier based on distance
+			value-= (Math.sqrt(rc.getLocation().distanceSquaredTo(objLoc)));
 		}
 		return value;
 	}

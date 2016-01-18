@@ -34,8 +34,31 @@ public class RobotRunner {
 		marco= new Move();
 	}
 	
+	public void randomMove() throws GameActionException{
+		Direction[] alldirs= Direction.values();
+		Direction answer= null;
+		Utility.shuffleDirArray(alldirs);
+		for (int n= 0; n< alldirs.length; n++){
+			if (rc.canMove(alldirs[n])){
+				rc.move(alldirs[n]);
+				break;
+			}
+		}
+	}
+	
 	public void run() throws GameActionException{
 		//Can write here a general case so all non-specified class can do something
+		if (rc.isCoreReady()){
+			if (rc.getType().canAttack()){
+				if (randall.nextBoolean()== false){
+					randomMove();
+				}else{
+					simpleAttack();
+				}
+			}else{
+				randomMove();
+			}
+		}
 	}
 	
 	protected void sendInstructions(){
@@ -44,6 +67,16 @@ public class RobotRunner {
 	
 	protected void followInstructions(){
 		
+	}
+	
+	protected void forwardish(Direction ahead) throws GameActionException{
+		for (int i: RobotConstants.posDirs){
+			Direction candidateDir= Direction.values()[(ahead.ordinal()+i+8)%8];
+			if (rc.canMove(candidateDir)){
+				rc.move(candidateDir);
+				break;
+			}
+		}
 	}
 	
 	protected void bugMove(MapLocation start, MapLocation end){
