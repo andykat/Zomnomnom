@@ -230,6 +230,5 @@ public class Archon extends RobotRunner{
 				//Do something about it
 			}
 		}
-		
 	}
 }

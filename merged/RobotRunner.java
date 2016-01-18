@@ -23,6 +23,7 @@ public class RobotRunner {
 	protected int robotSenseRadius;
 	protected Move marco;
 	protected MessageHash enigma;
+    private RobotInfo targetRobot;
 
 	public RobotRunner(RobotController rcin){
 		this.rc= rcin;
@@ -48,7 +49,16 @@ public class RobotRunner {
 		
 	}
 
-	
+		protected void forwardish(Direction ahead) throws GameActionException{
+		for (int i: RobotConstants.posDirs){
+			Direction candidateDir= Direction.values()[(ahead.ordinal()+i+8)%8];
+			if (rc.canMove(candidateDir)){
+				rc.move(candidateDir);
+				break;
+			}
+		}
+	}
+
 	protected boolean simpleAttack() throws GameActionException{
 		boolean attacked= false;
 	     if (rc.getType().canAttack()) {
