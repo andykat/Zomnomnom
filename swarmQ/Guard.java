@@ -273,14 +273,36 @@ public class Guard extends RobotRunner{
 							closestEnemyDist = curLoc.distanceSquaredTo(ml);
 							closestEnemyLoc = ml;
 							curStrat = strat.FIND_ENEMY;
-							
+							//broadcast location to other meanderers
+							if(curStrat == strat.MEANDER){
+								try{
+									rc.broadcastSignal(broadcastRange);
+								}
+								catch (GameActionException e) {
+									e.printStackTrace();
+								}
+							}
 						}
         			}
         			
         		}
         		//signal has message in it
         		else{
+        			//check for type
+        			int type = enigma.fastHashType(msg[0]);
         			
+        			//found enemy
+        			if(type == 0){
+        				if(curStrat==strat.MEANDER || curStrat == strat.FIND_ENEMY){
+        					int[] returnMsg = enigma.fastUnHash(msg);
+        					MapLocation tml = new MapLocation(returnMsg[1], returnMsg[2]);
+        					if(curLoc.distanceSquaredTo(tml) < closestEnemyDist){
+        						closestEnemyDist = curLoc.distanceSquaredTo(tml);
+        						closestEnemyLoc = tml;
+        						curStrat = strat.FIND_ENEMY;
+        					}
+        				}
+        			}
         		}
     		}
     	}

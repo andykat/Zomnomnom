@@ -27,6 +27,7 @@ public class Soldier extends RobotRunner{
 	private int broadcastRange;
 	private MapLocation closestEnemyLoc;
 	private int closestEnemyID;
+	private int closestEnemySignal = 0;
 	private int closestEnemyDist = 99999;
 	private double lastHealth = RobotType.SOLDIER.maxHealth;
 	private int steps=0;
@@ -268,9 +269,10 @@ public class Soldier extends RobotRunner{
         		if(msg==null){
         			MapLocation ml = signals[i].getLocation();
         			if(curStrat==strat.MEANDER || curStrat == strat.FIND_ENEMY){
-	        			if(curLoc.distanceSquaredTo(ml) < closestEnemyDist){
+	        			if(curLoc.distanceSquaredTo(ml) < closestEnemyDist && closestEnemySignal<2){
 							closestEnemyDist = curLoc.distanceSquaredTo(ml);
 							closestEnemyLoc = ml;
+							closestEnemySignal = 1;
 							curStrat = strat.FIND_ENEMY;
 							//broadcast location to other meanderers
 							if(curStrat == strat.MEANDER){
@@ -287,7 +289,22 @@ public class Soldier extends RobotRunner{
         		}
         		//signal has message in it
         		else{
+        			//check for type
+        			int type = enigma.fastHashType(msg[0]);
         			
+        			//found enemy
+        			if(type == 0){
+        				if(curStrat==strat.MEANDER || curStrat == strat.FIND_ENEMY){
+        					int[] returnMsg = enigma.fastUnHash(msg);
+        					MapLocation tml = new MapLocation(returnMsg[1], returnMsg[2]);
+        					if(curLoc.distanceSquaredTo(tml) < closestEnemyDist || closestEnemySignal < 2){
+        						closestEnemyDist = curLoc.distanceSquaredTo(tml);
+        						closestEnemyLoc = tml;
+        						curStrat = strat.FIND_ENEMY;
+        						closestEnemySignal = 2;
+        					}
+        				}
+        			}
         		}
     		}
     	}
@@ -295,8 +312,11 @@ public class Soldier extends RobotRunner{
 	public void changeStrat(){
 		moving = false;
 		closestEnemyDist = 99999;
+		closestEnemySignal = 0;
 	}
 	public void checkForHurtFriends(){
 		
 	}
 }
+//
+				

@@ -93,7 +93,7 @@ public class Archon extends RobotRunner{
 			else{
 				typeToBuild = RobotType.GUARD;
 			}
-			if(buildCount%12 == 4){
+			if(buildCount%15 == 4){
 				typeToBuild = RobotType.SCOUT;
 			}
 			if(rc.canBuild(spawnDir[friends.length%9], typeToBuild)){
