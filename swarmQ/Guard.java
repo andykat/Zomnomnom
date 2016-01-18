@@ -331,6 +331,6 @@ public class Guard extends RobotRunner{
 		tasty.put(RobotType.TTM, 0.5);
 		tasty.put(RobotType.TURRET, 1.0);
 		tasty.put(RobotType.VIPER, 1.0);
-		tasty.put(RobotType.ZOMBIEDEN, 0.05);	
+		tasty.put(RobotType.ZOMBIEDEN, 0.01);	
 	}
 }

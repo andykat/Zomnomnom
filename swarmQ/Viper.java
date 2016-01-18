@@ -1,4 +1,5 @@
 package swarmQ;
+
 import java.util.EnumMap;
 import java.util.Map;
 
@@ -10,7 +11,7 @@ import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 import battlecode.common.Signal;
 
-public class Soldier extends RobotRunner{
+public class Viper extends RobotRunner{
 	private enum strat{MEANDER,OBJECTIVE,COMBAT,KITE,FIND_ENEMY};
 	public static Direction[] directions = {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST, Direction.SOUTH_EAST,
             Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST};
@@ -32,17 +33,17 @@ public class Soldier extends RobotRunner{
 	private int closestEnemyID;
 	private int closestEnemySignal = 0;
 	private int closestEnemyDist = 99999;
-	private double lastHealth = RobotType.SOLDIER.maxHealth;
+	private double lastHealth = RobotType.VIPER.maxHealth;
 	private int steps=0;
 	private int stepLimit = 3;
 	private Map<RobotType, Double> tasty = new EnumMap<RobotType, Double>(RobotType.class);
-	public Soldier(RobotController rcin){
+	public Viper(RobotController rcin){
 		super(rcin);
 		curStrat = strat.MEANDER;
 		nearArchonLoc = rc.getLocation();
 		nearArchonLocDist = 99999;
 		nearArchonID = -1;
-		broadcastRange = RobotType.SOLDIER.sensorRadiusSquared * 5;
+		broadcastRange = RobotType.VIPER.sensorRadiusSquared * 5;
 		MapLocation[] archLocs = rc.getInitialArchonLocations(myTeam);
 		int centerX=0;
 		int centerY=0;
@@ -58,27 +59,27 @@ public class Soldier extends RobotRunner{
 		if (rc.isCoreReady()){
 			
 			if(curStrat == strat.MEANDER){
-				soldierMeander();
+				viperMeander();
 			}
 			else if(curStrat == strat.OBJECTIVE){
-				soldierObjective();
+				viperObjective();
 			}
 			else if(curStrat == strat.FIND_ENEMY){
-				soldierFindEnemy();
+				viperFindEnemy();
 			}
 			else if(curStrat == strat.COMBAT){
-				soldierCombat();
+				viperCombat();
 			}
 			else if(curStrat == strat.KITE){
-				soldierKite();
+				viperKite();
 			}
 		}
 	}
 	
-	public void soldierMeander(){
+	public void viperMeander(){
 		readSignals();
 		MapLocation curLoc = rc.getLocation();
-		RobotInfo[] enemies = rc.senseHostileRobots(curLoc, RobotType.SOLDIER.sensorRadiusSquared);
+		RobotInfo[] enemies = rc.senseHostileRobots(curLoc, RobotType.VIPER.sensorRadiusSquared);
 		if(enemies.length>0){
 			//enemy found. must kill
 			changeStrat();
@@ -94,7 +95,7 @@ public class Soldier extends RobotRunner{
 		}
 		
 		
-		RobotInfo[] friends = rc.senseNearbyRobots(RobotType.SOLDIER.sensorRadiusSquared, myTeam);
+		RobotInfo[] friends = rc.senseNearbyRobots(RobotType.VIPER.sensorRadiusSquared, myTeam);
 		
 		/*for(int i=0;i<friends.length;i++){
 			if(friends[i].maxHealth > friends[i].health){
@@ -107,7 +108,7 @@ public class Soldier extends RobotRunner{
 		}*/
 		
 		if(!moving){
-			if(curLoc.distanceSquaredTo(archCenter)<RobotType.SOLDIER.sensorRadiusSquared || friends.length>8){
+			if(curLoc.distanceSquaredTo(archCenter)<RobotType.VIPER.sensorRadiusSquared || friends.length>8){
 				//move to random location
 				dest = dest.add(directions[randall.nextInt(8)], randomLocationDistance);
 			}
@@ -136,12 +137,12 @@ public class Soldier extends RobotRunner{
 			}
 		}
 	}
-	public void soldierObjective(){
+	public void viperObjective(){
 		
 	}
-	public void soldierCombat(){
+	public void viperCombat(){
 		MapLocation curLoc = rc.getLocation();
-		if(rc.getHealth()/RobotType.SOLDIER.maxHealth < 0.2 && rc.getHealth() < lastHealth){
+		if(rc.getHealth()/RobotType.VIPER.maxHealth < 0.2 && rc.getHealth() < lastHealth){
 			RobotInfo[] friends = rc.senseNearbyRobots(2, myTeam);
 			if(friends.length < 5){
 				changeStrat();
@@ -152,16 +153,16 @@ public class Soldier extends RobotRunner{
 			}
 		}
 		lastHealth = rc.getHealth();
-		RobotInfo[] enemies = rc.senseHostileRobots(curLoc, RobotType.SOLDIER.sensorRadiusSquared);
+		RobotInfo[] enemies = rc.senseHostileRobots(curLoc, RobotType.VIPER.sensorRadiusSquared);
         if(enemies.length > 0) {
         	double[] enemyVal = new double[enemies.length];
         	for(int i=0;i<enemies.length;i++){
         		double percentHealth = 1.0 - enemies[i].health/enemies[i].maxHealth;
         		double distValue = 1.0;
-        		if(curLoc.distanceSquaredTo(enemies[i].location) > RobotType.SOLDIER.attackRadiusSquared){
-        			double dist = (double)(curLoc.distanceSquaredTo(enemies[i].location) - RobotType.SOLDIER.attackRadiusSquared);
+        		if(curLoc.distanceSquaredTo(enemies[i].location) > RobotType.VIPER.attackRadiusSquared){
+        			double dist = (double)(curLoc.distanceSquaredTo(enemies[i].location) - RobotType.VIPER.attackRadiusSquared);
         			distValue -= 0.2;
-        			distValue -= dist/((double)RobotType.SOLDIER.attackRadiusSquared);
+        			distValue -= dist/((double)RobotType.VIPER.attackRadiusSquared);
         		}
         		enemyVal[i] = percentHealth * distValue * tasty.get(enemies[i].type);
         	}
@@ -196,10 +197,10 @@ public class Soldier extends RobotRunner{
         
         
 	}
-	public void soldierFindEnemy(){
+	public void viperFindEnemy(){
 		readSignals();
 		MapLocation curLoc = rc.getLocation();
-		RobotInfo[] enemies = rc.senseHostileRobots(curLoc, RobotType.SOLDIER.sensorRadiusSquared);
+		RobotInfo[] enemies = rc.senseHostileRobots(curLoc, RobotType.VIPER.sensorRadiusSquared);
 		if(enemies.length>0){
 			//enemy found. must kill
 			changeStrat();
@@ -210,7 +211,7 @@ public class Soldier extends RobotRunner{
 		//move toward enemy
 		int dist = marco.bugMove(rc, closestEnemyLoc);
 		if(dist<3){
-			RobotInfo[] friends = rc.senseNearbyRobots(RobotType.SOLDIER.sensorRadiusSquared, myTeam);
+			RobotInfo[] friends = rc.senseNearbyRobots(RobotType.VIPER.sensorRadiusSquared, myTeam);
 			/*for(int i=0;i<friends.length;i++){
 				if(friends[i].maxHealth > friends[i].health){
 					if(friends[i].ID != closestEnemyID){
@@ -227,8 +228,8 @@ public class Soldier extends RobotRunner{
 			curStrat = strat.MEANDER;
 		}
 	}
-	public void soldierKite(){
-		RobotInfo[] enemies = rc.senseHostileRobots(rc.getLocation(), RobotType.SOLDIER.sensorRadiusSquared);
+	public void viperKite(){
+		RobotInfo[] enemies = rc.senseHostileRobots(rc.getLocation(), RobotType.VIPER.sensorRadiusSquared);
 		try {
 			runawayMove(rc, enemies);
 		} catch (GameActionException e) {
@@ -239,7 +240,7 @@ public class Soldier extends RobotRunner{
 		if(steps>=stepLimit){
 			//no more enemies
 			if(enemies.length==0){
-				//RobotInfo[] friends = rc.senseNearbyRobots(RobotType.SOLDIER.sensorRadiusSquared, myTeam);
+				//RobotInfo[] friends = rc.senseNearbyRobots(RobotType.VIPER.sensorRadiusSquared, myTeam);
 				
 				/*for(int i=0;i<friends.length;i++){
 					if(friends[i].maxHealth > friends[i].health){
@@ -337,5 +338,3 @@ public class Soldier extends RobotRunner{
 		tasty.put(RobotType.ZOMBIEDEN, 0.01);	
 	}
 }
-//
-				
