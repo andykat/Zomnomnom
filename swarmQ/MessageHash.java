@@ -1,5 +1,4 @@
-package communicatingPlayer;
-
+package swarmQ;
 /*
  * To use MessageHash:
  * Create MessageHash Object

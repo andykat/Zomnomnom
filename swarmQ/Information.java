@@ -1,6 +1,6 @@
-package communicatingPlayer;
+package swarmQ;
 import battlecode.common.*;
-import communicatingPlayer.RobotConstants.mapTypes;
+
 
 import java.util.ArrayList;
 import java.util.Arrays;

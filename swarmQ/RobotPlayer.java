@@ -1,8 +1,8 @@
-package communicatingPlayer;
-
+package swarmQ;
 import battlecode.common.*;
 
-public class RobotPlayer implements RobotConstants{
+
+public class RobotPlayer  implements RobotConstants{
 	static RobotController rc;
 	private static RobotRunner rr;
 	
@@ -11,7 +11,7 @@ public class RobotPlayer implements RobotConstants{
 		if (rc.getType().equals(RobotType.ARCHON)){
 			rr= new Archon(rc);
 		}else if (rc.getType().equals(RobotType.SCOUT)){
-			rr= new Scout(rc);
+			//rr= new Scout(rc);
 		}else if (rc.getType().equals(RobotType.GUARD)){
 			rr= new Guard(rc);
 		}else if (rc.getType().equals(RobotType.SOLDIER)){

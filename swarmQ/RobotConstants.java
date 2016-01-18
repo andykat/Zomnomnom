@@ -1,5 +1,4 @@
-package communicatingPlayer;
-
+package swarmQ;
 import battlecode.common.Direction;
 import battlecode.common.RobotType;
 

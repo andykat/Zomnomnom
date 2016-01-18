@@ -1,5 +1,4 @@
-package communicatingPlayer;
-
+package swarmQ;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -11,6 +10,8 @@ import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 import battlecode.common.Team;
 
+
+
 public class RobotRunner {
 	protected RobotController rc;
 	protected RobotInfo[] startingArchons;
@@ -21,6 +22,7 @@ public class RobotRunner {
 	protected Information memory;
 	protected int robotSenseRadius;
 	protected Move marco;
+	protected MessageHash enigma;
 
 	public RobotRunner(RobotController rcin){
 		this.rc= rcin;
@@ -31,6 +33,7 @@ public class RobotRunner {
 		memory= new Information(); //Everybody has a brain
 		robotSenseRadius= (int) Math.sqrt(rc.getType().sensorRadiusSquared);
 		marco= new Move();
+		enigma = new MessageHash();
 	}
 	
 	public void run() throws GameActionException{
@@ -44,35 +47,7 @@ public class RobotRunner {
 	protected void followInstructions(){
 		
 	}
-	
-	protected void bugMove(MapLocation start, MapLocation end){
-		try {
-			Direction dir = start.directionTo(end);
-			int c=0;
-			while(!rc.canMove(dir))
-			{
-				dir = dir.rotateRight();
-				if(c>7){
-					break;
-				}
-				c++;
-			}
-			if(c<8){
-				if(rc.isCoreReady()){
-					rc.move(dir);
-				}
-			}
-			else{
-				if(rc.isCoreReady()){
-					if (rc.canSense(rc.getLocation().add(dir)) && rc.onTheMap(rc.getLocation().add(dir))){
-					}
-				}
-			}
-		} catch (Exception e) {
-            System.out.println(e.getMessage());
-            e.printStackTrace();
-        }
-	}
+
 	
 	protected boolean simpleAttack() throws GameActionException{
 		boolean attacked= false;
@@ -108,52 +83,6 @@ public class RobotRunner {
 		return answer;
 	}
 	
-	protected ArrayList<MapLocation> createDividedSquarePerimNodes(int searchRange) throws GameActionException{
-		ArrayList<MapLocation> answer= new ArrayList<MapLocation>();
-
-		if (searchRange<= 0){
-			answer.add(rc.getLocation()); //zero range is yourself
-		}else{
-			int additive= 2* ((int) (robotSenseRadius * Math.sqrt(2)) -1)-1;
-			MapLocation prevPt = new MapLocation(Integer.MIN_VALUE, Integer.MIN_VALUE);
-			for (int x = -searchRange; x<= searchRange; x+= additive){
-				for (int y= -searchRange; y<= searchRange; y+= additive){
-					if (x== -searchRange || y== -searchRange || x+additive>= searchRange || y+additive >= searchRange){
-						MapLocation test= temperLocation(rc.getLocation().add(x,y));
-						if (test.distanceSquaredTo(prevPt) > rc.getType().sensorRadiusSquared/2){ //Only add points if it is further than half away? //test.distanceSquaredTo(prevPt) > rc.getType().sensorRadiusSquared/2 && 
-							answer.add(rc.getLocation().add(x,y));
-						}
-					}
-				}
-			}
-		}		
-		for (int n= 0; n< answer.size(); n++){ //This way the direction comparator works properly
-			answer.set(n, temperLocation(answer.get(n)));
-		}
-		
-		
-		Utility.removeMapLocDuplicate(answer); //Remove duplicates
-		return answer;
-	}
-	
-	
-	protected ArrayList<MapLocation> createDividedRadius(int searchRange, int radius) throws GameActionException{
-		ArrayList<MapLocation> answer= new ArrayList<MapLocation>();
-		int divisionNum= (int)(180/Math.toDegrees(Math.asin(searchRange*1.0/(2*radius))));
-		if (divisionNum!= 0){
-			double angle= 360/divisionNum;
-			//System.out.println("ANGLE: "+Math.toDegrees(angle));
-			if (angle!= 0){
-				for (int n= 0; n< 360; n+= angle){
-					int px= (int) (radius*Math.cos(Math.toRadians(n)));
-					int py= (int) (radius*Math.sin(Math.toRadians(n)));
-					answer.add(new MapLocation(rc.getLocation().x+px, rc.getLocation().y+py));
-				}
-			}
-		}
-		return answer;
-	}
-	
 	protected void buildRobot(RobotType rt) throws GameActionException{
 		Direction canBuildDir= getSpawnableDir(rt);
 		if (canBuildDir!= null){
@@ -173,7 +102,7 @@ public class RobotRunner {
 	
 	protected void senseMapEdges() throws GameActionException{ //THE CROSS IS ALWAYS MORE POWERFUL, diagonals quite useless
 		//When the checked point turns from off the map to on the map, that is the value
-		rc.setIndicatorString(0, "sense map edge");
+		//rc.setIndicatorString(0, "sense map edge");
 		boolean prevOffMap= false;
 		
 		for (int x= -robotSenseRadius; x< 0; x++){ //Check to yourself
@@ -184,8 +113,8 @@ public class RobotRunner {
 				}else if (prevOffMap && rc.onTheMap(check)){
 					Direction scan= rc.getLocation().directionTo(check);
 					memory.addCornerValueCandidate(scan, check); //You add the direction of your check and the corresponding map location when the map first comes on grid
-					rc.setIndicatorDot(check, 0, 255, 0);
-					rc.setIndicatorLine(rc.getLocation(), check, 0, 255, 0);
+					//rc.setIndicatorDot(check, 0, 255, 0);
+					//rc.setIndicatorLine(rc.getLocation(), check, 0, 255, 0);
 					break ;
 				}
 			}
@@ -194,13 +123,13 @@ public class RobotRunner {
 		prevOffMap= false;
 		for (int x= robotSenseRadius; x> 0; x--){
 			MapLocation check= rc.getLocation().add(x,0);
-			rc.setIndicatorString(1, "CHECK: "+ check.toString());
+			//rc.setIndicatorString(1, "CHECK: "+ check.toString());
 			if (rc.canSense(check)){
 				if (!rc.onTheMap(check)){
 					prevOffMap= true;
 				}else if (prevOffMap && rc.onTheMap(check)){
-					rc.setIndicatorDot(check, 0, 255, 0);
-					rc.setIndicatorLine(rc.getLocation(), check, 0, 255, 0);
+					//rc.setIndicatorDot(check, 0, 255, 0);
+					//rc.setIndicatorLine(rc.getLocation(), check, 0, 255, 0);
 					Direction scan= rc.getLocation().directionTo(check);
 					memory.addCornerValueCandidate(scan, check);
 					break;
@@ -215,8 +144,8 @@ public class RobotRunner {
 				if (!rc.onTheMap(check)){ //If the checked position is not on the map
 					prevOffMap= true;
 				}else if (prevOffMap && rc.onTheMap(check)){ //if the previously checked position is not on the map, and the current on is
-					rc.setIndicatorDot(check, 0, 255, 0);
-					rc.setIndicatorLine(rc.getLocation(), check, 0, 255, 0);
+					//rc.setIndicatorDot(check, 0, 255, 0);
+					//rc.setIndicatorLine(rc.getLocation(), check, 0, 255, 0);
 					Direction scan= rc.getLocation().directionTo(check);
 					memory.addCornerValueCandidate(scan, check);
 					break;
@@ -231,8 +160,8 @@ public class RobotRunner {
 				if (!rc.onTheMap(check)){
 					prevOffMap= true;
 				}else if (prevOffMap && rc.onTheMap(check)){
-					rc.setIndicatorDot(check, 0, 255, 0);
-					rc.setIndicatorLine(rc.getLocation(), check, 0, 255, 0);
+					//rc.setIndicatorDot(check, 0, 255, 0);
+					//rc.setIndicatorLine(rc.getLocation(), check, 0, 255, 0);
 					Direction scan= rc.getLocation().directionTo(check);
 					memory.addCornerValueCandidate(scan, check);
 					break;
@@ -257,7 +186,7 @@ public class RobotRunner {
 	}
 	
 	protected void gatherMapInfo() throws GameActionException{
-		rc.setIndicatorString(0, "Sensing");
+		//rc.setIndicatorString(0, "Sensing");
 		RobotInfo[] enemyRobotsInRange = rc.senseNearbyRobots(rc.getType().sensorRadiusSquared, Team.ZOMBIE);
 		for (int n= 0; n< enemyRobotsInRange.length; n++){
 			if (enemyRobotsInRange[n].type==RobotType.ZOMBIEDEN){
@@ -286,5 +215,183 @@ public class RobotRunner {
 				}
 			 }
 		 }
+	}
+	public static Direction[] bestDir(Direction dir){
+		Direction[] bestDir= {dir,dir.rotateLeft(), dir.rotateRight(), dir.rotateLeft().rotateLeft(), dir.rotateRight().rotateRight()};
+		return bestDir;
+	}
+	public static Direction[] spawnDir(Direction dir){
+		Direction[] bestDir= {dir,dir.rotateLeft(), dir.rotateRight(), dir, dir.rotateLeft(), dir.rotateRight(), dir, dir.rotateLeft().rotateLeft(), dir.rotateRight().rotateRight()};
+		return bestDir;
+	}
+	
+	public void runawayMove(RobotController rc, RobotInfo[] enemies) throws GameActionException{
+        MapLocation myLoc = rc.getLocation();
+        //boolean canMove = false;
+        int[] zVec = awayFromZombies(rc, enemies); 
+        int[] eVec = awayFromEnemyTeam(rc, enemies);
+        
+        int dx = zVec[0] + eVec[0];
+        int dy = zVec[1] + eVec[1];
+        MapLocation targetLoc = myLoc.add(dx, dy);
+        //Direction dir = myLoc.directionTo(targetLoc);
+
+        marco.bugMove(rc, targetLoc);
+        
+	}
+
+	public int[] getMaxSensibleXY(RobotController rc) {
+	    int r = rc.getType().sensorRadiusSquared;
+	    int x=0, y=0, max = 0;
+	    
+	    for(int i=0; i < Math.sqrt(r); i++) {
+	        for(int j=0; j < Math.sqrt(r); j++) {
+	            int a = i*i + j*j;
+	            if((a <= r) && a > max) {
+	                x = i;
+	                y = j;
+	                max = a;
+	            }
+	        }
+	    }
+	    int[] xy = {x, y};
+	    return xy;
+	}
+	
+	// 1 = right rotate
+	// 0 = u fucked
+	// -1 = left rotate
+	public int optimalRotation(RobotController rc, Direction dir, RobotInfo[] enemies) {
+	    MapLocation curLoc = rc.getLocation();
+	    MapLocation[] sensibleLoc = null;
+	    int[] center = getMaxSensibleXY(rc);
+	    int halfRadiusSquared = (int) Math.pow(Math.floor((Math.sqrt(rc.getType().sensorRadiusSquared)/2)), 2);
+	    // MapLocation.getAllMapLocationsWithinRadiusSq(curLoc.add(), rc.getType().sensorRadiusSquared);
+	    if(dir == Direction.NORTH_EAST) {
+	        sensibleLoc = MapLocation.getAllMapLocationsWithinRadiusSq(curLoc.add(center[0], -center[1]), halfRadiusSquared);
+	        if(sensibleLoc.length < 4) {
+	            return -1;
+	        }
+	    }
+	    else if(dir == Direction.NORTH_WEST) {
+	        sensibleLoc = MapLocation.getAllMapLocationsWithinRadiusSq(curLoc.add(-center[0], -center[1]), halfRadiusSquared);
+	        if(sensibleLoc.length < 4) {
+	            return 1;
+	        }
+	    }
+	    else if(dir == Direction.SOUTH_WEST) {
+	        sensibleLoc = MapLocation.getAllMapLocationsWithinRadiusSq(curLoc.add(-center[0], center[1]), halfRadiusSquared);
+	        if(sensibleLoc.length < 4) {
+	            return -1;
+	        }
+	    }
+	    else if(dir == Direction.SOUTH_EAST) {
+	        sensibleLoc = MapLocation.getAllMapLocationsWithinRadiusSq(curLoc.add(center[0], center[1]), halfRadiusSquared);
+	        if(sensibleLoc.length < 4) {
+	            return 1;
+	        }
+	    }
+	    else if(dir == Direction.NORTH) {
+	        sensibleLoc = MapLocation.getAllMapLocationsWithinRadiusSq(curLoc.add(0, -center[1]), halfRadiusSquared);
+	        if(sensibleLoc.length < 4) {
+	            return 1;
+	        }
+	    }
+	    else if(dir == Direction.EAST) {
+	        sensibleLoc = MapLocation.getAllMapLocationsWithinRadiusSq(curLoc.add(center[0], 0), halfRadiusSquared);
+	        if(sensibleLoc.length < 4) {
+	            return 1;
+	        }
+	    }
+	    else if(dir == Direction.SOUTH) {
+	        sensibleLoc = MapLocation.getAllMapLocationsWithinRadiusSq(curLoc.add(0, center[1]), halfRadiusSquared);
+	        if(sensibleLoc.length < 4) {
+	            return 1;
+	        }
+	    }
+	    else if(dir == Direction.WEST) {
+	        sensibleLoc = MapLocation.getAllMapLocationsWithinRadiusSq(curLoc.add(-center[0], 0), halfRadiusSquared);
+	        if(sensibleLoc.length < 4) {
+	            return 1;
+	        }
+	    }
+	    else {
+	        return 1;
+	    }
+	    return 1;
+	}
+	
+	public int[] awayFromZombies(RobotController rc, RobotInfo[] enemies) throws GameActionException {
+	    int dx = 0, dy = 0;
+	    int multiplier = 1; // repulsion force multiplier
+	    MapLocation myLoc = rc.getLocation();
+	
+	    for(RobotInfo r : enemies) {
+	        MapLocation enemyLoc = r.location;
+	        if(r.type == RobotType.BIGZOMBIE) {
+	            multiplier = 3;
+	        }
+	        else if(r.type == RobotType.RANGEDZOMBIE) {
+	            multiplier = 2;
+	        }
+	        else {
+	            multiplier = 1;
+	        }
+	        dx += multiplier * (myLoc.x - enemyLoc.x);
+	        dy += multiplier * (myLoc.y - enemyLoc.y);
+	    } 
+	    int[] vector = {dx, dy};
+	    //System.out.println("zombies dx: " + dx + " dy: " + dy);
+	    return vector;
+	}
+	
+	public int[] awayFromEnemyTeam(RobotController rc, RobotInfo[] enemies) {
+	    int dx = 0, dy = 0;
+	    int multiplier = 1; // repulsion force multiplier
+	    MapLocation myLoc = rc.getLocation();
+	    Team enemyTeam = rc.getTeam().opponent();
+	
+	    for(RobotInfo r : enemies) {
+	        if(r.team == enemyTeam) {
+	            MapLocation enemyLoc = r.location;
+	            if(willDieInTurns(rc, enemies, 10)) {
+	                multiplier = -10;  // hella move towards them
+	            } 
+	            else {
+	                multiplier = 3;     // get the f away from them
+	            }
+	            dx += multiplier * (myLoc.x - enemyLoc.x);
+	            dy += multiplier * (myLoc.y - enemyLoc.y);
+	        }
+	    }
+	    //System.out.println("enemies dx: " + dx + " enemies dy: " + dy);
+	    int[] vector = {dx, dy};
+	    return vector;
+	
+	}
+	
+	// Very approximate. Not accurate at all. Heuristic af. But whatever.
+	public boolean willDieInTurns(RobotController rc, RobotInfo[] enemies, int turns) {
+	    double totaldmg = 0.0;
+	    double weapondelay = 0.5;
+	
+	    for(RobotInfo r : enemies) {
+	        totaldmg += (weapondelay * turns * r.attackPower);
+	    }
+	    
+	    if(rc.getHealth() < totaldmg) {
+	        return true;
+	    }
+	
+	    return false;
+	}
+	
+	public int max(int a, int b){
+		if(a>b) return a;
+		return b;
+	}
+	public int min(int a, int b){
+		if(a>b) return b;
+		return a;
 	}
 }
