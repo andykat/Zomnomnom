@@ -26,7 +26,7 @@ public class RobotRunner {
 
 	public RobotRunner(RobotController rcin){
 		this.rc= rcin;
-		randall= new Random();
+		randall= new Random(rc.getID());
 		myTeam= rc.getTeam();
 		enemyTeam= myTeam.opponent();
 		eden= rc.getInitialArchonLocations(myTeam)[0];

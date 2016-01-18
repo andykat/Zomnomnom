@@ -121,6 +121,7 @@ public class Archon extends RobotRunner{
 			marco.swarmMoveStart();
 			dest = new MapLocation(vX, vY);
 			marco.swarmMove(rc, dest);
+			moving = true;
 		}
 		else{
 			int[] moveReturn = marco.swarmMove(rc, dest);
