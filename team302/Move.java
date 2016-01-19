@@ -1,4 +1,4 @@
-package swarmQ;
+package team302;
 
 import battlecode.common.Direction;
 import battlecode.common.MapLocation;

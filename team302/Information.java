@@ -1,4 +1,4 @@
-package swarmQ;
+package team302;
 import battlecode.common.*;
 
 import java.util.ArrayList;

@@ -1,4 +1,4 @@
-package swarmQ;
+package team302;
 
 import java.util.ArrayList;
 
@@ -55,6 +55,9 @@ public class Archon extends RobotRunner{
 			centerY += archLocs[i].y;
 		}
 		toArchonCenter = rc.getLocation().directionTo(new MapLocation(centerX/archLocs.length, centerY/archLocs.length));
+		if(archLocs.length==1){
+			toArchonCenter = Direction.SOUTH;
+		}
 		spawnDir = spawnDir(toArchonCenter);
 		bestDir = bestDir(toArchonCenter);
 		
@@ -92,6 +95,7 @@ public class Archon extends RobotRunner{
 	public void run() throws GameActionException{
 		if (rc.isCoreReady()){
 			rounds++;
+
 			curLoc = rc.getLocation();
 			RobotInfo[] enemies = rc.senseHostileRobots(curLoc, RobotType.ARCHON.sensorRadiusSquared);
 			if(curStrat == strat.KITE){
@@ -121,7 +125,6 @@ public class Archon extends RobotRunner{
 	        }
 			
 			RobotInfo[] friends = rc.senseNearbyRobots(RobotType.ARCHON.sensorRadiusSquared, myTeam);
-			
 			//spawn soldier in best location
 			if(rc.hasBuildRequirements(RobotType.SOLDIER)){
 				RobotType typeToBuild = RobotType.SOLDIER;
@@ -134,12 +137,15 @@ public class Archon extends RobotRunner{
 				if(buildCount%15 == 4){
 					typeToBuild = RobotType.SCOUT;
 				}
+				System.out.println("137");
 				if(rc.canBuild(spawnDir[friends.length%9], typeToBuild)){
+					System.out.println("builded");
 					rc.build(spawnDir[friends.length%9], typeToBuild);
 					buildCount++;
 					return;
 				}
 				else{
+					System.out.println("145");
 					for(int i=0;i<bestDir.length;i++){
 						if(rc.canBuild(bestDir[i], typeToBuild)){
 							rc.build(bestDir[i], typeToBuild);

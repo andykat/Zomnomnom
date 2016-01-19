@@ -1,4 +1,4 @@
-package swarmQ;
+package team302;
 
 import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
