@@ -109,10 +109,10 @@ public class Guard extends RobotRunner{
 		if(!moving){
 			if(curLoc.distanceSquaredTo(archCenter)<RobotType.GUARD.sensorRadiusSquared || friends.length>8){
 				//move to random location
-				dest = dest.add(directions[randall.nextInt(8)], randomLocationDistance);
+				dest = archCenter.add(directions[randall.nextInt(8)], randomLocationDistance);
 			}
 			else if(curLoc.distanceSquaredTo(dest) < 2){
-				dest = dest.add(directions[randall.nextInt(8)], randomLocationDistance);
+				dest = archCenter.add(directions[randall.nextInt(8)], randomLocationDistance);
 			}
 			moving = true;
 			marco.swarmMoveStart();
@@ -156,7 +156,7 @@ public class Guard extends RobotRunner{
         if(enemies.length > 0) {
         	double[] enemyVal = new double[enemies.length];
         	for(int i=0;i<enemies.length;i++){
-        		double percentHealth = 1.0 - enemies[i].health/enemies[i].maxHealth;
+        		double percentHealth = 1.0 - enemies[i].health/enemies[i].maxHealth/2.0;
         		double distValue = 1.0;
         		if(curLoc.distanceSquaredTo(enemies[i].location) > RobotType.GUARD.attackRadiusSquared){
         			double dist = (double)(curLoc.distanceSquaredTo(enemies[i].location) - RobotType.GUARD.attackRadiusSquared);
@@ -276,7 +276,7 @@ public class Guard extends RobotRunner{
         			if(curStrat==strat.MEANDER || curStrat == strat.FIND_ENEMY){
 	        			if(curLoc.distanceSquaredTo(ml) < closestEnemyDist){
 							closestEnemyDist = curLoc.distanceSquaredTo(ml);
-							closestEnemyLoc = ml;
+							closestEnemyLoc = ml.add(curLoc.directionTo(ml), 3);
 							curStrat = strat.FIND_ENEMY;
 							//broadcast location to other meanderers
 							if(curStrat == strat.MEANDER){

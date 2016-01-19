@@ -26,7 +26,7 @@ public class Soldier extends RobotRunner{
 	private double archonVectorWeight = 0.6;
 	private double friendVectorWeight = 0.4;
 	private double vectorLength = 8;
-	private int randomLocationDistance = 10;
+	private int randomLocationDistance = 5;
 	private int broadcastRange;
 	private MapLocation closestEnemyLoc;
 	private int closestEnemyID;
@@ -109,10 +109,10 @@ public class Soldier extends RobotRunner{
 		if(!moving){
 			if(curLoc.distanceSquaredTo(archCenter)<RobotType.SOLDIER.sensorRadiusSquared || friends.length>8){
 				//move to random location
-				dest = dest.add(directions[randall.nextInt(8)], randomLocationDistance);
+				dest = archCenter.add(directions[randall.nextInt(8)], randomLocationDistance);
 			}
 			else if(curLoc.distanceSquaredTo(dest) < 2){
-				dest = dest.add(directions[randall.nextInt(8)], randomLocationDistance);
+				dest = archCenter.add(directions[randall.nextInt(8)], randomLocationDistance);
 			}
 			moving = true;
 			marco.swarmMoveStart();
@@ -276,7 +276,7 @@ public class Soldier extends RobotRunner{
         			if(curStrat==strat.MEANDER || curStrat == strat.FIND_ENEMY){
 	        			if(curLoc.distanceSquaredTo(ml) < closestEnemyDist && closestEnemySignal<2){
 							closestEnemyDist = curLoc.distanceSquaredTo(ml);
-							closestEnemyLoc = ml;
+							closestEnemyLoc = ml.add(curLoc.directionTo(ml), 3);
 							closestEnemySignal = 1;
 							curStrat = strat.FIND_ENEMY;
 							//broadcast location to other meanderers
