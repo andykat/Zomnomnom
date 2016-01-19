@@ -394,4 +394,47 @@ public class RobotRunner {
 		if(a>b) return b;
 		return a;
 	}
+	protected ArrayList<MapLocation> createDividedSquarePerimNodes(int searchRange) throws GameActionException{
+		ArrayList<MapLocation> answer= new ArrayList<MapLocation>();
+
+		if (searchRange<= 0){
+			answer.add(rc.getLocation()); //zero range is yourself
+		}else{
+			int additive= 2* ((int) (robotSenseRadius * Math.sqrt(2)) -1)-1;
+			MapLocation prevPt = new MapLocation(Integer.MIN_VALUE, Integer.MIN_VALUE);
+			for (int x = -searchRange; x<= searchRange; x+= additive){
+				for (int y= -searchRange; y<= searchRange; y+= additive){
+					if (x== -searchRange || y== -searchRange || x+additive>= searchRange || y+additive >= searchRange){
+						MapLocation test= temperLocation(rc.getLocation().add(x,y));
+						if (test.distanceSquaredTo(prevPt) > rc.getType().sensorRadiusSquared/2){ //Only add points if it is further than half away? //test.distanceSquaredTo(prevPt) > rc.getType().sensorRadiusSquared/2 && 
+							answer.add(rc.getLocation().add(x,y));
+						}
+					}
+				}
+			}
+		}		
+		for (int n= 0; n< answer.size(); n++){ //This way the direction comparator works properly
+			answer.set(n, temperLocation(answer.get(n)));
+		}
+		
+		
+		Utility.removeMapLocDuplicate(answer); //Remove duplicates
+		return answer;
+	}
+	protected void forwardish(Direction ahead) throws GameActionException{
+		//System.out.println(ahead);
+		for (int i: RobotConstants.posDirs){
+			Direction candidateDir= Direction.values()[(ahead.ordinal()+i+8)%8];
+			if (rc.canMove(candidateDir)){
+				rc.move(candidateDir);
+				break;
+			}
+		}
+	}
+	protected void gatherPartInfo(){
+		MapLocation[] partsLoc= rc.sensePartLocations(rc.getType().sensorRadiusSquared);
+		for (int n= 0; n< partsLoc.length; n++){
+			memory.addMapInfo(partsLoc[n], (int)rc.senseParts(partsLoc[n]),RobotConstants.mapTypes.PARTS);
+		}
+	}
 }

@@ -1,7 +1,6 @@
 package swarmQ;
 import battlecode.common.*;
 
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -63,17 +62,27 @@ public class Information { //http://stackoverflow.com/questions/683041/java-how-
 	public float getMapLocValue(MapLocation objLoc, RobotController rc){ //Returns the value of a given position 
 		//TODO if worth it, take time to sense around the given location for overall value
 		///int[rubbleCount,PartsCount,DenHealth,NeutralCharacterType]
+		
 		float value= 0;
+		
+		if (objLoc!= null)
 		if (map.containsKey(objLoc)){
-			int[] info = map.get(objLoc);
-			value= -info[0]/100; //Every 100 rubble is -1 valuable
-			value+= info[1];
-
-			//Zombie dens worth more ealrier, worth a lot less later (more likely to do)
-			//Lower the health of the den, more worthy the goal
-			//value+= (250-rc.getRoundNum())*(GameConstants.DEN_PART_REWARD)+ ((RobotType.ZOMBIEDEN.maxHealth-info[2])/RobotType.ZOMBIEDEN.maxHealth) * GameConstants.DEN_PART_REWARD ;
-			if (info[3]> -1 && RobotConstants.posNRobotTypes[info[3]]!= null)
-				value+= RobotConstants.posNRobotTypes[info[3]].partCost;
+				int[] info = map.get(objLoc);
+				value= -info[0]/100; //Every 100 rubble is -1 valuable
+				value+= info[1];
+	
+				//Zombie dens worth more earlier, worth a lot less later (more likely to do)
+				//Lower the health of the den, more worthy the goal
+				//value+= (250-rc.getRoundNum())*(GameConstants.DEN_PART_REWARD)+ ((RobotType.ZOMBIEDEN.maxHealth-info[2])/RobotType.ZOMBIEDEN.maxHealth) * GameConstants.DEN_PART_REWARD ;
+				if (info[3]> 0 && RobotConstants.posNRobotTypes[info[3]]!= null){
+					value+= RobotConstants.posNRobotTypes[info[3]].partCost*2;
+					if (RobotConstants.posNRobotTypes[info[3]].equals(RobotType.ARCHON)){
+						value+= 1000;
+					}
+					rc.setIndicatorString(1, "Robot int type: "+ info[3]);
+					//rc.setIndicatorString(2, "Nuetral robot value added?" + rc.getRoundNum());
+				}		
+			value-= (Math.sqrt(rc.getLocation().distanceSquaredTo(objLoc)));
 		}
 		return value;
 	}
@@ -161,10 +170,12 @@ public class Information { //http://stackoverflow.com/questions/683041/java-how-
 
 	
 	public void addNeutralRobotMapInfo(MapLocation loc, RobotInfo ri){//Adding individual values
-		if (ri.team.equals(Team.NEUTRAL)){
+		if (ri== null){
+			addInfo(loc, 3, getRobotIntType(null));
+		}else if (ri.team.equals(Team.NEUTRAL)){
 			addInfo(loc, 3, getRobotIntType(ri.type));
-			updateObjectives(loc);
 		}
+		updateObjectives(loc);
 	}
 	
 	public void addMapInfo(MapLocation loc, int value, RobotConstants.mapTypes mapType){//Adding individual values

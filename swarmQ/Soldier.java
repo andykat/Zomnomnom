@@ -156,7 +156,7 @@ public class Soldier extends RobotRunner{
         if(enemies.length > 0) {
         	double[] enemyVal = new double[enemies.length];
         	for(int i=0;i<enemies.length;i++){
-        		double percentHealth = 1.0 - enemies[i].health/enemies[i].maxHealth;
+        		double percentHealth = 1.0 - enemies[i].health/enemies[i].maxHealth/2.0;
         		double distValue = 1.0;
         		if(curLoc.distanceSquaredTo(enemies[i].location) > RobotType.SOLDIER.attackRadiusSquared){
         			double dist = (double)(curLoc.distanceSquaredTo(enemies[i].location) - RobotType.SOLDIER.attackRadiusSquared);

@@ -178,7 +178,9 @@ public class Viper extends RobotRunner{
         	//if target is within attack range, then attack
         	if(rc.canAttackLocation(enemies[maxIndex].location)){
         		try{
-        			rc.attackLocation(enemies[maxIndex].location);
+        			if(rc.isWeaponReady()){
+        				rc.attackLocation(enemies[maxIndex].location);
+        			}
         		}catch (GameActionException e) {
     				e.printStackTrace();
     			}
