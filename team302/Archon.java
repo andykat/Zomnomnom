@@ -137,15 +137,15 @@ public class Archon extends RobotRunner{
 				if(buildCount%15 == 4){
 					typeToBuild = RobotType.SCOUT;
 				}
-				System.out.println("137");
+				//System.out.println("137");
 				if(rc.canBuild(spawnDir[friends.length%9], typeToBuild)){
-					System.out.println("builded");
+					//System.out.println("builded");
 					rc.build(spawnDir[friends.length%9], typeToBuild);
 					buildCount++;
 					return;
 				}
 				else{
-					System.out.println("145");
+					//System.out.println("145");
 					for(int i=0;i<bestDir.length;i++){
 						if(rc.canBuild(bestDir[i], typeToBuild)){
 							rc.build(bestDir[i], typeToBuild);
@@ -321,7 +321,7 @@ public class Archon extends RobotRunner{
 			}
             curStrat = strat.KITE;
             changeStrat();
-            return;
+            //return;
         }
 		
 		RobotInfo[] friends = rc.senseNearbyRobots(RobotType.ARCHON.sensorRadiusSquared, myTeam);
